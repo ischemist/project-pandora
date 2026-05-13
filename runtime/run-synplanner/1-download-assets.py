@@ -1,6 +1,6 @@
 """
 Usage:
-    uv run --directory scripts/planning/run-synplanner 1-download-assets.py
+    uv run --directory runtime/run-synplanner 1-download-assets.py
 """
 
 from synplan.utils.loading import download_selected_files

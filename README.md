@@ -50,7 +50,7 @@ currently that includes:
 - `retrostar`
 - `synllama`
 - `syntheseus`
-- `planning/run-synplanner`
+- `runtime/run-synplanner`
 
 ## what does not live here
 
