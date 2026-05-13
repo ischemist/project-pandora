@@ -1,20 +1,21 @@
 """
-Run Synplanner MCTS retrosynthesis predictions on a batch of targets.
+Run Synplanner MCTS retrosynthesis predictions on a batch of targets using value-network evaluation.
 
 This script processes targets from a benchmark using Synplanner's MCTS algorithm
-and saves results in a structured format matching other prediction scripts.
+with evaluation-first search guided by a value network and saves results in a structured
+format matching other prediction scripts.
 
 Example usage:
-    uv run --directory runtime/run-synplanner 3-run-synp-rollout.py --benchmark uspto-190
-    uv run --directory runtime/run-synplanner 3-run-synp-rollout.py --benchmark random-n5-2-seed=20251030 --effort high
+    uv run --directory runtime/synplanner 2-run-synp-val.py --benchmark mkt-cnv-160
+    uv run --directory runtime/synplanner 2-run-synp-val.py --benchmark random-n5-2-seed=20251030 --effort high
 
 The benchmark definition should be located at: data/1-benchmarks/definitions/{benchmark_name}.json.gz
-Results are saved to: data/2-raw/synplanner-{version}-mcts-rollout[-{effort}]/{benchmark_name}/
+Results are saved to: data/2-raw/synplanner-{version}-mcts-val[-{effort}]/{benchmark_name}/
 """
 
 import yaml
 from synplan.mcts.tree import TreeConfig
-from synplan.utils.config import RolloutEvaluationConfig
+from synplan.utils.config import ValueNetworkEvaluationConfig
 from synplan.utils.loading import load_evaluation_function, load_reaction_rules
 from utils import (
     create_benchmark_parser,
@@ -28,11 +29,12 @@ from utils import (
 from retrocast.utils.logging import configure_script_logging, logger
 
 configure_script_logging()
+
 # Synplanner version - update when upgrading the library
 PLANNER_VERSION = "1.3.2"
 
 if __name__ == "__main__":
-    parser = create_benchmark_parser("Run Synplanner MCTS with rollout evaluation")
+    parser = create_benchmark_parser("Run Synplanner MCTS with value-network evaluation")
     args = parser.parse_args()
 
     paths = get_synplanner_paths()
@@ -40,9 +42,9 @@ if __name__ == "__main__":
 
     # Setup output directory
     folder_name = (
-        f"synplanner-{PLANNER_VERSION}-mcts-rollout"
+        f"synplanner-{PLANNER_VERSION}-mcts-val"
         if args.effort == "normal"
-        else f"synplanner-{PLANNER_VERSION}-mcts-rollout-{args.effort}"
+        else f"synplanner-{PLANNER_VERSION}-mcts-val-{args.effort}"
     )
     save_dir = paths.raw_dir / folder_name / benchmark.name
     save_dir.mkdir(parents=True, exist_ok=True)
@@ -51,7 +53,8 @@ if __name__ == "__main__":
     logger.info(f"effort: {args.effort}")
 
     # Load configuration
-    config_path = paths.synplanner_dir / "mcts-rollout-config.yaml"
+    config_path = paths.synplanner_dir / "mcts-val-config.yaml"
+    value_network_path = paths.synplanner_dir / "uspto" / "weights" / "value_network.ckpt"
 
     with open(config_path, encoding="utf-8") as file:
         config = yaml.safe_load(file)
@@ -60,7 +63,7 @@ if __name__ == "__main__":
         config["tree"]["max_iterations"] = 500
 
     tree_config = TreeConfig.from_dict(config["tree"])
-    tree_config.search_strategy = "expansion_first"
+    tree_config.search_strategy = "evaluation_first"
     tree_config.evaluation_agg = config["node_evaluation"].get("evaluation_agg", tree_config.evaluation_agg)
 
     policy_function = load_policy_from_config(
@@ -72,14 +75,14 @@ if __name__ == "__main__":
     # Load resources
     reaction_rules = load_reaction_rules(paths.reaction_rules)
 
-    eval_config = RolloutEvaluationConfig(
-        policy_network=policy_function,
-        reaction_rules=reaction_rules,
-        building_blocks=building_blocks,
-        min_mol_size=tree_config.min_mol_size,
-        max_depth=tree_config.max_depth,
-        normalize=tree_config.normalize_scores,
-    )
+    evaluation_type = str(config["node_evaluation"].get("evaluation_type", "")).lower()
+    if evaluation_type and evaluation_type != "gcn":
+        logger.warning(f"Config evaluation_type={evaluation_type!r} ignored; using value network evaluation.")
+
+    if not value_network_path.exists():
+        raise FileNotFoundError(f"Value network weights not found at {value_network_path}")
+
+    eval_config = ValueNetworkEvaluationConfig(weights_path=str(value_network_path))
     evaluation_function = load_evaluation_function(eval_config)
 
     # Run predictions
@@ -101,7 +104,7 @@ if __name__ == "__main__":
         bench_path=bench_path,
         stock_path=stock_path,
         config_path=config_path,
-        script_name="runtime/run-synplanner/3-run-synp-rollout.py",
+        script_name="runtime/synplanner/2-run-synp-val.py",
         benchmark=benchmark,
         planner_version=PLANNER_VERSION,
     )
