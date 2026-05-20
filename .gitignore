@@ -19,6 +19,12 @@ data/retrocast/0-assets/model-configs/**/*.txt*
 data/retrocast/0-assets/model-configs/**/*.dat*
 data/retrocast/0-assets/model-configs/**/.*
 data/retrocast/0-assets/model-configs/**/*.md
+data/retrocast/0-assets/paroutes/
+data/retrocast/0-assets/uspto-190.csv
+data/retrocast/1-benchmarks/definitions/
+data/retrocast/1-benchmarks/raw-stocks/
+data/retrocast/1-benchmarks/stocks/
+data/retrocast/SHA256SUMS
 data/retrocast/2-raw/
 data/retrocast/3-processed/
 data/retrocast/4-scored/
