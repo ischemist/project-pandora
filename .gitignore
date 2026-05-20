@@ -19,6 +19,10 @@ data/retrocast/0-assets/model-configs/**/*.txt*
 data/retrocast/0-assets/model-configs/**/*.dat*
 data/retrocast/0-assets/model-configs/**/.*
 data/retrocast/0-assets/model-configs/**/*.md
+data/retrocast/**/*.csv
+data/retrocast/**/*.gz
+data/retrocast/**/*.hdf5
+data/retrocast/**/*.txt
 data/retrocast/2-raw/
 data/retrocast/3-processed/
 data/retrocast/4-scored/

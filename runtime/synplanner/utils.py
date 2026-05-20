@@ -240,7 +240,7 @@ def save_synplanner_results(
     manifest = create_manifest(
         action=script_name,
         sources=[bench_path, stock_path, config_path],
-        root_dir=save_dir.parents[2],  # data/ directory
+        root_dir=save_dir.parents[2],  # data/retrocast directory
         outputs=[(save_dir / "results.json.gz", results, "unknown")],
         statistics=summary,
         directives={

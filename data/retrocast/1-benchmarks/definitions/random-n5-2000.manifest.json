@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "retrocast_version": "0.5.0",
+  "created_at": "2025-12-01T19:38:03.827341Z",
+  "action": "scripts/paroutes/02-create-subsets",
+  "parameters": {
+    "seed": 42,
+    "name": "random-n5-2000"
+  },
+  "source_files": [
+    {
+      "path": "1-benchmarks/definitions/paroutes-n5-full-pruned.json.gz",
+      "file_hash": "ddd087377551e106e8b39954459988d2ee40261150d4d5b3c802da4c6c4dfb99",
+      "content_hash": null
+    },
+    {
+      "path": "1-benchmarks/stocks/n5-stock.csv.gz",
+      "file_hash": "e8ff1fd558bb8c8992ef808ca33b1f965674542bf9e4428e5ef3f9b8a078f6e9",
+      "content_hash": null
+    }
+  ],
+  "output_files": [
+    {
+      "path": "1-benchmarks/definitions/random-n5-2000.json.gz",
+      "file_hash": "3685a4fdc06930f4648a0fd248f0adb10ef6529a1699e809a439abbbc0403365",
+      "content_hash": "b9b00c6fe3d89e1c3f15fddbadce26e4c99620b89f2a5859acbcd66132600e14"
+    }
+  ],
+  "statistics": {
+    "n_targets": 2000
+  }
+}

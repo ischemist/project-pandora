@@ -37,6 +37,7 @@ so this repo is split out physically, but not fully severed conceptually. some s
 - planner wrappers and execution scripts
 - asset/bootstrap helpers
 - one-off preprocessing steps tied to specific models
+- benchmark and stock curation scripts tied to local RetroCast data
 - per-runner locked environments where needed
 - shared RetroCast-style runtime assets under `data/retrocast`
 
@@ -47,6 +48,7 @@ currently that includes:
 - `directmultistep`
 - `dreamretroer`
 - `multistepttl`
+- `paroutes`
 - `retrochimera`
 - `retrostar`
 - `synllama`
@@ -67,4 +69,4 @@ things that remain in `project-procrustes`:
 
 this repo is currently an extraction, not a total dependency divorce. expect some awkward transitional coupling while runner code is peeled away from shared RetroCast utilities.
 
-`data/retrocast/0-assets/model-configs` is the shared transitional home for model configs. lightweight yaml/config files are tracked; large downloaded model payloads such as checkpoints, onnx files, hdf5 stocks, pickles, and generated outputs are ignored locally.
+`data/retrocast` is the shared transitional home for RetroCast runtime data, including model configs, benchmarks, raw predictions, processed outputs, scores, reports, and comparisons. lightweight yaml/config files, manifests, and checksums are tracked; large downloaded model payloads, compressed datasets, stocks, raw predictions, processed outputs, scores, reports, and comparisons are ignored locally. published release artifacts, such as PaRoutes training-set releases, remain owned by project-procrustes.
