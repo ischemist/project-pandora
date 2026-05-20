@@ -2,3 +2,25 @@
 __pycache__/
 .venv/
 *.pyc
+
+# RetroCast runtime data. Keep lightweight YAML configs tracked, but keep model
+# weights, generated outputs, and downloaded assets out of Git.
+data/retrocast/0-assets/**/*.pickle
+data/retrocast/0-assets/**/*.pkl
+data/retrocast/0-assets/model-configs/**/*.onnx
+data/retrocast/0-assets/model-configs/**/*.csv*
+data/retrocast/0-assets/model-configs/**/*.ckpt*
+data/retrocast/0-assets/model-configs/**/*.pt*
+data/retrocast/0-assets/model-configs/**/*.smi*
+data/retrocast/0-assets/model-configs/**/*.sdf*
+data/retrocast/0-assets/model-configs/**/*.zip*
+data/retrocast/0-assets/model-configs/**/*.hdf5*
+data/retrocast/0-assets/model-configs/**/*.txt*
+data/retrocast/0-assets/model-configs/**/*.dat*
+data/retrocast/0-assets/model-configs/**/.*
+data/retrocast/0-assets/model-configs/**/*.md
+data/retrocast/2-raw/
+data/retrocast/3-processed/
+data/retrocast/4-scored/
+data/retrocast/5-results/
+data/retrocast/6-comparisons/

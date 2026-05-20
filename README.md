@@ -38,6 +38,7 @@ so this repo is split out physically, but not fully severed conceptually. some s
 - asset/bootstrap helpers
 - one-off preprocessing steps tied to specific models
 - per-runner locked environments where needed
+- shared RetroCast-style runtime assets under `data/retrocast`
 
 currently that includes:
 
@@ -64,4 +65,6 @@ things that remain in `project-procrustes`:
 
 ## status
 
-this repo is currently an extraction, not a total dependency divorce. expect some awkward transitional coupling while runner code is peeled away from shared retrocast utilities.
+this repo is currently an extraction, not a total dependency divorce. expect some awkward transitional coupling while runner code is peeled away from shared RetroCast utilities.
+
+`data/retrocast/0-assets/model-configs` is the shared transitional home for model configs. lightweight yaml/config files are tracked; large downloaded model payloads such as checkpoints, onnx files, hdf5 stocks, pickles, and generated outputs are ignored locally.

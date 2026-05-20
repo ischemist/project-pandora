@@ -2,7 +2,7 @@
 
 Usage:
 
- uv run scripts/aizynthfinder/1-download-assets.py data/0-assets/model-configs/aizynthfinder
+ uv run scripts/aizynthfinder/1-download-assets.py data/retrocast/0-assets/model-configs/aizynthfinder
 """
 
 import argparse

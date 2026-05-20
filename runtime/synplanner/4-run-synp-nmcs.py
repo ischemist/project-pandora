@@ -8,8 +8,8 @@ Example usage:
     uv run --directory runtime/synplanner 4-run-synp-nmcs.py --benchmark uspto-190
     uv run --directory runtime/synplanner 4-run-synp-nmcs.py --benchmark random-n5-2-seed=20251030 --effort high
 
-The benchmark definition should be located at: data/1-benchmarks/definitions/{benchmark_name}.json.gz
-Results are saved to: data/2-raw/synplanner-{version}-nmcs[-{effort}]/{benchmark_name}/
+The benchmark definition should be located at: data/retrocast/1-benchmarks/definitions/{benchmark_name}.json.gz
+Results are saved to: data/retrocast/2-raw/synplanner-{version}-nmcs[-{effort}]/{benchmark_name}/
 """
 
 import yaml

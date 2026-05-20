@@ -8,8 +8,8 @@ Example usage:
     uv run --extra syntheseus scripts/syntheseus/2-run-synth-retro0-local-retro.py --benchmark mkt-lin-500
     uv run --extra syntheseus scripts/syntheseus/2-run-synth-retro0-local-retro.py --benchmark random-n5-2-seed=20251030 --effort high
 
-The benchmark definition should be located at: data/1-benchmarks/definitions/{benchmark_name}.json.gz
-Results are saved to: data/2-raw/syntheseus-retro0-local-retro[-{effort}]/{benchmark_name}/
+The benchmark definition should be located at: data/retrocast/1-benchmarks/definitions/{benchmark_name}.json.gz
+Results are saved to: data/retrocast/2-raw/syntheseus-retro0-local-retro[-{effort}]/{benchmark_name}/
 """
 
 import argparse
@@ -32,7 +32,7 @@ from retrocast.utils.serializers import serialize_route
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
-STOCKS_DIR = BASE_DIR / "data" / "1-benchmarks" / "stocks"
+STOCKS_DIR = BASE_DIR / "data" / "retrocast" / "1-benchmarks" / "stocks"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     iterations = 500 if args.effort == "high" else 100
 
     # 1. Load Benchmark
-    bench_path = BASE_DIR / "data" / "1-benchmarks" / "definitions" / f"{args.benchmark}.json.gz"
+    bench_path = BASE_DIR / "data" / "retrocast" / "1-benchmarks" / "definitions" / f"{args.benchmark}.json.gz"
     benchmark = load_benchmark(bench_path)
     assert benchmark.stock_name is not None, f"Stock name not found in benchmark {args.benchmark}"
 
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     folder_name = (
         "syntheseus-retro0-local-retro" if args.effort == "normal" else f"syntheseus-retro0-local-retro-{args.effort}"
     )
-    save_dir = BASE_DIR / "data" / "2-raw" / folder_name / benchmark.name
+    save_dir = BASE_DIR / "data" / "retrocast" / "2-raw" / folder_name / benchmark.name
     save_dir.mkdir(parents=True, exist_ok=True)
 
     logger.info(f"stock: {benchmark.stock_name}")
@@ -144,7 +144,7 @@ if __name__ == "__main__":
     manifest = create_manifest(
         action="scripts/syntheseus/2-run-synth-retro0-local-retro.py",
         sources=[bench_path, stock_path],
-        root_dir=BASE_DIR / "data",
+        root_dir=BASE_DIR / "data" / "retrocast",
         outputs=[(save_dir / "results.json.gz", results, "unknown")],
         statistics=summary,
     )

@@ -11,8 +11,8 @@ Example usage:
 
     uv run --extra dms scripts/directmultistep/2-run-dms.py --benchmark uspto-190 --model-name "flash" --device cuda --use_fp16
 
-The benchmark definition should be located at: data/1-benchmarks/definitions/{benchmark_name}.json.gz
-Results are saved to: data/2-raw/dms-{model_name}/{benchmark_name}/
+The benchmark definition should be located at: data/retrocast/1-benchmarks/definitions/{benchmark_name}.json.gz
+Results are saved to: data/retrocast/2-raw/dms-{model_name}/{benchmark_name}/
 """
 
 import argparse
@@ -40,8 +40,8 @@ logger.setLevel(logging.WARNING)
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
-DMS_DIR = BASE_DIR / "data" / "0-assets" / "model-configs" / "dms"
-STOCKS_DIR = BASE_DIR / "data" / "1-benchmarks" / "stocks"
+DMS_DIR = BASE_DIR / "data" / "retrocast" / "0-assets" / "model-configs" / "dms"
+STOCKS_DIR = BASE_DIR / "data" / "retrocast" / "1-benchmarks" / "stocks"
 
 
 if __name__ == "__main__":
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # 1. Load Benchmark
-    bench_path = BASE_DIR / "data" / "1-benchmarks" / "definitions" / f"{args.benchmark}.json.gz"
+    bench_path = BASE_DIR / "data" / "retrocast" / "1-benchmarks" / "definitions" / f"{args.benchmark}.json.gz"
     benchmark = load_benchmark(bench_path)
 
     logger.info(f"model_name: {args.model_name}")
@@ -72,7 +72,7 @@ if __name__ == "__main__":
 
     model_name = args.model_name.replace("_", "-").replace(" ", "-")
     folder_name = f"dms-{model_name}"
-    save_dir = BASE_DIR / "data" / "2-raw" / folder_name / benchmark.name
+    save_dir = BASE_DIR / "data" / "retrocast" / "2-raw" / folder_name / benchmark.name
     save_dir.mkdir(parents=True, exist_ok=True)
 
     logger.info("Retrosynthesis starting")
@@ -166,7 +166,7 @@ if __name__ == "__main__":
     manifest = create_manifest(
         action="scripts/directmultistep/2-run-dms.py",
         sources=[bench_path],
-        root_dir=BASE_DIR / "data",
+        root_dir=BASE_DIR / "data" / "retrocast",
         outputs=[
             (save_dir / "valid_results.json.gz", valid_results, "unknown"),
             (save_dir / "buyables_results.json.gz", buyables_results, "unknown"),

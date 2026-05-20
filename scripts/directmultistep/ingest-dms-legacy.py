@@ -36,15 +36,15 @@ def main():
     args = parser.parse_args()
 
     # 1. Load the Benchmark Definition
-    bench_def_path = BASE_DIR / "data" / "1-benchmarks" / "definitions" / f"{args.benchmark}.json.gz"
+    bench_def_path = BASE_DIR / "data" / "retrocast" / "1-benchmarks" / "definitions" / f"{args.benchmark}.json.gz"
     benchmark = load_benchmark(bench_def_path)
 
     # Create lookup map: {SMILES -> [target_id_1, target_id_2]}
     smiles_map = benchmark.get_smiles_map()
 
     # 2. Load Predictions
-    n1_pickle = BASE_DIR / "data" / "2-raw" / args.model / "n1" / "n1_correct_paths_NS2n.pkl"
-    n5_pickle = BASE_DIR / "data" / "2-raw" / args.model / "n5" / "n5_correct_paths_NS2n.pkl"
+    n1_pickle = BASE_DIR / "data" / "retrocast" / "2-raw" / args.model / "n1" / "n1_correct_paths_NS2n.pkl"
+    n5_pickle = BASE_DIR / "data" / "retrocast" / "2-raw" / args.model / "n5" / "n5_correct_paths_NS2n.pkl"
     raw_data_n1 = load_legacy_pickle(n1_pickle)
     raw_data_n5 = load_legacy_pickle(n5_pickle)
 
@@ -82,7 +82,7 @@ def main():
 
     # 4. Save
     model_name = args.model
-    output_dir = BASE_DIR / "data" / "3-processed" / args.benchmark / model_name
+    output_dir = BASE_DIR / "data" / "retrocast" / "3-processed" / args.benchmark / model_name
     output_dir.mkdir(parents=True, exist_ok=True)
 
     out_path = output_dir / "routes.json.gz"
@@ -93,7 +93,7 @@ def main():
         action="scripts/directmultistep/ingest-dms-legacy",
         sources=[bench_def_path, n1_pickle, n5_pickle],
         outputs=[(out_path, processed_predictions, "predictions")],
-        root_dir=BASE_DIR / "data",
+        root_dir=BASE_DIR / "data" / "retrocast",
         parameters={"benchmark": args.benchmark, "model": model_name},
         statistics={"n_targets_found": hits},
     )

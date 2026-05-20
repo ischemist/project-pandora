@@ -12,8 +12,8 @@ Example usage:
 
     uv run scripts/askcos/1-run-askcos.py --benchmark mkt-lin-500 --askcos-url http://localhost:9321/get_buyable_paths
 
-The benchmark definition should be located at: data/1-benchmarks/definitions/{benchmark_name}.json.gz
-Results are saved to: data/2-raw/askcos/{benchmark_name}/
+The benchmark definition should be located at: data/retrocast/1-benchmarks/definitions/{benchmark_name}.json.gz
+Results are saved to: data/retrocast/2-raw/askcos/{benchmark_name}/
 """
 
 import argparse
@@ -88,13 +88,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Load benchmark
-    bench_path = BASE_DIR / "data" / "1-benchmarks" / "definitions" / f"{args.benchmark}.json.gz"
+    bench_path = BASE_DIR / "data" / "retrocast" / "1-benchmarks" / "definitions" / f"{args.benchmark}.json.gz"
     logger.info(f"Loading benchmark from {bench_path}")
     benchmark = load_benchmark(bench_path)
     logger.info(f"Loaded {len(benchmark.targets)} targets from benchmark '{benchmark.name}'")
 
     # Create output directory
-    save_dir = BASE_DIR / "data" / "2-raw" / "askcos" / benchmark.name
+    save_dir = BASE_DIR / "data" / "retrocast" / "2-raw" / "askcos" / benchmark.name
     save_dir.mkdir(parents=True, exist_ok=True)
     logger.info(f"Results will be saved to {save_dir}")
 
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     manifest = create_manifest(
         action="scripts/askcos/1-run-askcos.py",
         sources=[bench_path],
-        root_dir=BASE_DIR / "data",
+        root_dir=BASE_DIR / "data" / "retrocast",
         outputs=[
             (save_dir / "results.json.gz", results, "unknown"),
         ],

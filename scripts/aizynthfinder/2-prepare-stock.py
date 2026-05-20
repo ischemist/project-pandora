@@ -2,14 +2,14 @@
 
 Usage:
     uv run --extra aizyn scripts/aizynthfinder/2-prepare-stock.py \
-        --files data/1-benchmarks/stocks/n1-n5-stock.txt \
+        --files data/retrocast/1-benchmarks/stocks/n1-n5-stock.txt \
         --source plain \
-        --output data/1-benchmarks/stocks/n1-n5-stock.hdf5 \
+        --output data/retrocast/1-benchmarks/stocks/n1-n5-stock.hdf5 \
         --target hdf5
     uv run --extra aizyn scripts/aizynthfinder/2-prepare-stock.py \
-        --files data/1-benchmarks/stocks/buyables-stock.txt \
+        --files data/retrocast/1-benchmarks/stocks/buyables-stock.txt \
         --source plain \
-        --output data/1-benchmarks/stocks/buybles-stock.hdf5 \
+        --output data/retrocast/1-benchmarks/stocks/buybles-stock.hdf5 \
         --target hdf5
 
 """
