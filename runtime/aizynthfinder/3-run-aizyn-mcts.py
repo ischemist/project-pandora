@@ -3,6 +3,9 @@ Run AiZynthFinder MCTS retrosynthesis predictions on a batch of targets.
 
 Example usage:
     uv run --directory runtime/aizynthfinder 3-run-aizyn-mcts.py --benchmark random-n5-50 --limit 2
+
+Ubuntu runtime deps:
+    sudo apt-get install -y libxrender1 libxext6 libsm6
 """
 
 from utils import (

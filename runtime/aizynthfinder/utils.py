@@ -5,11 +5,14 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+import tempfile
 from collections.abc import Iterable
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import yaml
 from aizynthfinder.aizynthfinder import AiZynthFinder
 from tqdm import tqdm
 
@@ -90,6 +93,39 @@ def iter_targets(benchmark: BenchmarkSet, limit: int | None) -> Iterable[Any]:
         yield target
 
 
+@contextmanager
+def pruned_stock_config(config_path: Path, stock_name: str, project_root: Path) -> Iterable[Path]:
+    """Write a temporary AiZynthFinder config containing only the selected stock.
+
+    AiZynthFinder loads every stock declared in the config before selection, so
+    a benchmark using buyables-stock can fail if unrelated hdf5 stocks are absent.
+    """
+    with open(config_path, encoding="utf-8") as fileobj:
+        config = yaml.safe_load(fileobj)
+
+    stock_config = config.get("stock", {})
+    if stock_name not in stock_config:
+        raise KeyError(f"Stock {stock_name!r} not found in {config_path}")
+
+    stock_path = project_root / stock_config[stock_name]
+    if not stock_path.exists():
+        raise FileNotFoundError(
+            f"Required stock file {stock_path} does not exist. "
+            "Create it with runtime/aizynthfinder/2-prepare-stock.py."
+        )
+
+    config["stock"] = {stock_name: stock_config[stock_name]}
+
+    with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False, encoding="utf-8") as fileobj:
+        yaml.safe_dump(config, fileobj, sort_keys=False)
+        temp_config_path = Path(fileobj.name)
+
+    try:
+        yield temp_config_path
+    finally:
+        temp_config_path.unlink(missing_ok=True)
+
+
 def run_aizynthfinder_predictions(
     benchmark: BenchmarkSet,
     config_path: Path,
@@ -103,28 +139,30 @@ def run_aizynthfinder_predictions(
     targets = list(iter_targets(benchmark, limit))
     os.chdir(project_root)
 
-    for target in tqdm(targets, desc="Finding retrosynthetic paths"):
-        with timer.measure(target.id):
-            try:
-                finder = AiZynthFinder(configfile=str(config_path))
-                finder.stock.select(benchmark.stock_name)
-                finder.expansion_policy.select("uspto")
-                finder.filter_policy.select("uspto")
+    assert benchmark.stock_name is not None
+    with pruned_stock_config(config_path, benchmark.stock_name, project_root) as run_config_path:
+        for target in tqdm(targets, desc="Finding retrosynthetic paths"):
+            with timer.measure(target.id):
+                try:
+                    finder = AiZynthFinder(configfile=str(run_config_path))
+                    finder.stock.select(benchmark.stock_name)
+                    finder.expansion_policy.select("uspto")
+                    finder.filter_policy.select("uspto")
 
-                finder.target_smiles = target.smiles
-                finder.tree_search()
-                finder.build_routes()
-                stats = finder.extract_statistics()
+                    finder.target_smiles = target.smiles
+                    finder.tree_search()
+                    finder.build_routes()
+                    stats = finder.extract_statistics()
 
-                if finder.routes:
-                    results[target.id] = finder.routes.dict_with_extra(include_metadata=False, include_scores=True)
-                    if stats.get("is_solved", False):
-                        solved_count += 1
-                else:
+                    if finder.routes:
+                        results[target.id] = finder.routes.dict_with_extra(include_metadata=False, include_scores=True)
+                        if stats.get("is_solved", False):
+                            solved_count += 1
+                    else:
+                        results[target.id] = {}
+                except Exception as e:
+                    logger.error(f"Failed to process target {target.id} ({target.smiles}): {e}", exc_info=True)
                     results[target.id] = {}
-            except Exception as e:
-                logger.error(f"Failed to process target {target.id} ({target.smiles}): {e}", exc_info=True)
-                results[target.id] = {}
 
     return results, solved_count, timer.to_model()
 
