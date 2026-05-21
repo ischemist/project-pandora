@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 import sys
 from pathlib import Path
 
@@ -41,19 +40,6 @@ FILES_TO_DOWNLOAD = {
     },
 }
 
-YAML_TEMPLATE = """expansion:
-  uspto:
-    - {}
-    - {}
-  ringbreaker:
-    - {}
-    - {}
-filter:
-  uspto: {}
-stock:
-  zinc: {}
-"""
-
 
 def _download_file(url: str, filename: Path) -> None:
     with requests.get(url, stream=True, timeout=60) as response:
@@ -90,20 +76,6 @@ def main() -> None:
     except requests.HTTPError as err:
         print(f"Download failed with message {str(err)}")
         sys.exit(1)
-
-    with open(path / "config.yml", "w", encoding="utf-8") as fileobj:
-        config_dir = os.path.abspath(path)
-        fileobj.write(
-            YAML_TEMPLATE.format(
-                os.path.join(config_dir, FILES_TO_DOWNLOAD["policy_model_onnx"]["filename"]),
-                os.path.join(config_dir, FILES_TO_DOWNLOAD["template_file"]["filename"]),
-                os.path.join(config_dir, FILES_TO_DOWNLOAD["ringbreaker_model_onnx"]["filename"]),
-                os.path.join(config_dir, FILES_TO_DOWNLOAD["ringbreaker_templates"]["filename"]),
-                os.path.join(config_dir, FILES_TO_DOWNLOAD["filter_policy_onnx"]["filename"]),
-                os.path.join(config_dir, FILES_TO_DOWNLOAD["stock"]["filename"]),
-            )
-        )
-    print("Configuration file written to config.yml")
 
 
 if __name__ == "__main__":

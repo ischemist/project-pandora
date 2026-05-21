@@ -20,14 +20,6 @@ def _get_arguments() -> argparse.Namespace:
         help="read SMILES from plain files or a python module",
     )
     parser.add_argument("--output", required=True, default="", help="output filename or source tag")
-    parser.add_argument(
-        "--target",
-        choices=["hdf5", "mongo", "molbloom", "molbloom-inchi"],
-        default="hdf5",
-        help="type of output",
-    )
-    parser.add_argument("--host", help="the host of the Mongo database")
-    parser.add_argument("--bloom_params", nargs=2, type=int, help="the parameters to the Bloom filter")
     return parser.parse_args()
 
 
@@ -74,9 +66,7 @@ def main() -> None:
     args = _get_arguments()
     smiles_gen = extract_plain_smiles(args.files) if args.source == "plain" else extract_smiles_from_module(args.files)
     inchi_keys_gen = (inchi_key for inchi_key in _convert_smiles(smiles_gen))
-
-    if args.target == "hdf5":
-        make_hdf5_stock(inchi_keys_gen, args.output)
+    make_hdf5_stock(inchi_keys_gen, args.output)
 
 
 if __name__ == "__main__":
