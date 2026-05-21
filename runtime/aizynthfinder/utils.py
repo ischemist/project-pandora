@@ -14,8 +14,9 @@ from typing import Any
 
 import yaml
 from aizynthfinder.aizynthfinder import AiZynthFinder
-from tqdm import tqdm
+from rich.console import Console
 
+from retrocast.cli.progress import create_cli_progress
 from retrocast.io import create_manifest, load_benchmark, save_execution_stats, save_json_gz
 from retrocast.models.benchmark import BenchmarkSet, ExecutionStats
 from retrocast.paths import get_paths
@@ -126,6 +127,16 @@ def pruned_stock_config(config_path: Path, stock_name: str, project_root: Path) 
         temp_config_path.unlink(missing_ok=True)
 
 
+@contextmanager
+def quiet_progress_info_logs() -> Iterable[None]:
+    """Hide info/debug logs while progress owns the terminal."""
+    logging.disable(logging.INFO)
+    try:
+        yield
+    finally:
+        logging.disable(logging.DEBUG)
+
+
 def run_aizynthfinder_predictions(
     benchmark: BenchmarkSet,
     config_path: Path,
@@ -141,28 +152,43 @@ def run_aizynthfinder_predictions(
 
     assert benchmark.stock_name is not None
     with pruned_stock_config(config_path, benchmark.stock_name, project_root) as run_config_path:
-        for target in tqdm(targets, desc="Finding retrosynthetic paths"):
-            with timer.measure(target.id):
-                try:
-                    finder = AiZynthFinder(configfile=str(run_config_path))
-                    finder.stock.select(benchmark.stock_name)
-                    finder.expansion_policy.select("uspto")
-                    finder.filter_policy.select("uspto")
+        console = Console()
+        with create_cli_progress(console=console, unit="target") as progress:
+            progress_task = progress.add_task("Finding retrosynthetic paths", total=len(targets))
+            with quiet_progress_info_logs():
+                for target in targets:
+                    with timer.measure(target.id):
+                        try:
+                            finder = AiZynthFinder(configfile=str(run_config_path))
+                            finder.stock.select(benchmark.stock_name)
+                            finder.expansion_policy.select("uspto")
+                            finder.filter_policy.select("uspto")
 
-                    finder.target_smiles = target.smiles
-                    finder.tree_search()
-                    finder.build_routes()
-                    stats = finder.extract_statistics()
+                            finder.target_smiles = target.smiles
+                            finder.tree_search()
+                            finder.build_routes()
+                            stats = finder.extract_statistics()
 
-                    if finder.routes:
-                        results[target.id] = finder.routes.dict_with_extra(include_metadata=False, include_scores=True)
-                        if stats.get("is_solved", False):
-                            solved_count += 1
-                    else:
-                        results[target.id] = {}
-                except Exception as e:
-                    logger.error(f"Failed to process target {target.id} ({target.smiles}): {e}", exc_info=True)
-                    results[target.id] = {}
+                            if finder.routes:
+                                results[target.id] = finder.routes.dict_with_extra(
+                                    include_metadata=False,
+                                    include_scores=True,
+                                )
+                                if stats.get("is_solved", False):
+                                    solved_count += 1
+                            else:
+                                results[target.id] = {}
+                        except Exception as e:
+                            logger.error(f"Failed to process target {target.id} ({target.smiles}): {e}", exc_info=True)
+                            results[target.id] = {}
+                        finally:
+                            progress.advance(progress_task)
+
+    for target in targets:
+        results.setdefault(target.id, {})
+
+    if not targets:
+        logger.warning("No targets selected for processing.")
 
     return results, solved_count, timer.to_model()
 
