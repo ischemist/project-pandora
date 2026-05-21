@@ -13,13 +13,12 @@ from typing import Any
 
 import yaml
 from aizynthfinder.aizynthfinder import AiZynthFinder
-from rich.console import Console
-
 from retrocast.cli.progress import create_cli_progress
 from retrocast.io import create_manifest, load_benchmark, save_execution_stats, save_json_gz
 from retrocast.models.benchmark import BenchmarkSet, ExecutionStats
 from retrocast.utils import ExecutionTimer
 from retrocast.utils.logging import logger
+from rich.console import Console
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = PROJECT_ROOT / "data" / "retrocast"
@@ -72,8 +71,7 @@ def load_config(config_path: Path, stock_name: str, effort: str) -> dict[str, An
     stock_path = PROJECT_ROOT / stock_config[stock_name]
     if not stock_path.exists():
         raise FileNotFoundError(
-            f"Required stock file {stock_path} does not exist. "
-            "Create it with runtime/aizynthfinder/2-prepare-stock.py."
+            f"Required stock file {stock_path} does not exist. Create it with runtime/aizynthfinder/2-prepare-stock.py."
         )
 
     config["stock"] = {stock_name: stock_config[stock_name]}

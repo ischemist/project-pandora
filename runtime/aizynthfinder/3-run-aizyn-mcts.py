@@ -8,6 +8,7 @@ Ubuntu runtime deps:
     sudo apt-get install -y libxrender1 libxext6 libsm6
 """
 
+from retrocast.utils.logging import configure_script_logging, logger
 from utils import (
     AIZYNTHFINDER_DIR,
     RAW_DIR,
@@ -17,8 +18,6 @@ from utils import (
     run_aizynthfinder_predictions,
     save_aizynthfinder_results,
 )
-
-from retrocast.utils.logging import configure_script_logging, logger
 
 configure_script_logging()
 quiet_aizynthfinder_debug_logs()

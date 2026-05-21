@@ -9,6 +9,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from retrocast.io import create_manifest, load_benchmark, save_execution_stats, save_json_gz
+from retrocast.models.benchmark import BenchmarkSet, ExecutionStats
+from retrocast.paths import get_paths
+from retrocast.utils import ExecutionTimer
+from retrocast.utils.logging import logger
 from synplan.chem.reaction_routes.io import make_json
 from synplan.chem.reaction_routes.route_cgr import extract_reactions
 from synplan.chem.utils import mol_from_smiles
@@ -16,12 +21,6 @@ from synplan.mcts.tree import Tree, TreeConfig
 from synplan.utils.config import CombinedPolicyConfig, PolicyNetworkConfig
 from synplan.utils.loading import load_building_blocks, load_combined_policy_function, load_policy_function
 from tqdm import tqdm
-
-from retrocast.io import create_manifest, load_benchmark, save_execution_stats, save_json_gz
-from retrocast.models.benchmark import BenchmarkSet, ExecutionStats
-from retrocast.paths import get_paths
-from retrocast.utils import ExecutionTimer
-from retrocast.utils.logging import logger
 
 
 @dataclass
