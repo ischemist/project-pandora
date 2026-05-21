@@ -1,9 +1,6 @@
-"""Module with script to download public data
+"""Download public AiZynthFinder model assets."""
 
-Usage:
-
- uv run scripts/aizynthfinder/1-download-assets.py data/retrocast/0-assets/model-configs/aizynthfinder
-"""
+from __future__ import annotations
 
 import argparse
 import os
@@ -58,11 +55,11 @@ stock:
 """
 
 
-def _download_file(url: str, filename: str) -> None:
-    with requests.get(url, stream=True) as response:
+def _download_file(url: str, filename: Path) -> None:
+    with requests.get(url, stream=True, timeout=60) as response:
         response.raise_for_status()
         total_size = int(response.headers.get("content-length", 0))
-        pbar = tqdm.tqdm(total=total_size, desc=os.path.basename(filename), unit="B", unit_scale=True)
+        pbar = tqdm.tqdm(total=total_size, desc=filename.name, unit="B", unit_scale=True)
         with open(filename, "wb") as fileobj:
             for chunk in response.iter_content(chunk_size=1024):
                 fileobj.write(chunk)
@@ -71,12 +68,17 @@ def _download_file(url: str, filename: str) -> None:
 
 
 def main() -> None:
-    """Entry-point for CLI"""
     parser = argparse.ArgumentParser("download_public_data")
     parser.add_argument(
         "path",
         type=Path,
-        default=".",
+        nargs="?",
+        default=Path(__file__).resolve().parents[2]
+        / "data"
+        / "retrocast"
+        / "0-assets"
+        / "model-configs"
+        / "aizynthfinder",
         help="the path to download the files",
     )
     path = parser.parse_args().path
@@ -84,21 +86,21 @@ def main() -> None:
 
     try:
         for filespec in FILES_TO_DOWNLOAD.values():
-            _download_file(filespec["url"], os.path.join(path, filespec["filename"]))
+            _download_file(filespec["url"], path / filespec["filename"])
     except requests.HTTPError as err:
         print(f"Download failed with message {str(err)}")
         sys.exit(1)
 
-    with open(os.path.join(path, "config.yml"), "w") as fileobj:
-        path = os.path.abspath(path)
+    with open(path / "config.yml", "w", encoding="utf-8") as fileobj:
+        config_dir = os.path.abspath(path)
         fileobj.write(
             YAML_TEMPLATE.format(
-                os.path.join(path, FILES_TO_DOWNLOAD["policy_model_onnx"]["filename"]),
-                os.path.join(path, FILES_TO_DOWNLOAD["template_file"]["filename"]),
-                os.path.join(path, FILES_TO_DOWNLOAD["ringbreaker_model_onnx"]["filename"]),
-                os.path.join(path, FILES_TO_DOWNLOAD["ringbreaker_templates"]["filename"]),
-                os.path.join(path, FILES_TO_DOWNLOAD["filter_policy_onnx"]["filename"]),
-                os.path.join(path, FILES_TO_DOWNLOAD["stock"]["filename"]),
+                os.path.join(config_dir, FILES_TO_DOWNLOAD["policy_model_onnx"]["filename"]),
+                os.path.join(config_dir, FILES_TO_DOWNLOAD["template_file"]["filename"]),
+                os.path.join(config_dir, FILES_TO_DOWNLOAD["ringbreaker_model_onnx"]["filename"]),
+                os.path.join(config_dir, FILES_TO_DOWNLOAD["ringbreaker_templates"]["filename"]),
+                os.path.join(config_dir, FILES_TO_DOWNLOAD["filter_policy_onnx"]["filename"]),
+                os.path.join(config_dir, FILES_TO_DOWNLOAD["stock"]["filename"]),
             )
         )
     print("Configuration file written to config.yml")
