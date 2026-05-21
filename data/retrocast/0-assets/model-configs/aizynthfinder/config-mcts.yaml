@@ -1,5 +1,6 @@
 search:
   iteration_limit: 100
+  max_transforms: 10
 expansion:
   uspto:
     - data/retrocast/0-assets/model-configs/aizynthfinder/uspto_model.onnx

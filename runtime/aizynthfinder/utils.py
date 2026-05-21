@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import argparse
-import copy
 import logging
-import os
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -68,16 +66,31 @@ def load_config(config_path: Path, stock_name: str, effort: str) -> dict[str, An
     if stock_name not in stock_config:
         raise KeyError(f"Stock {stock_name!r} not found in {config_path}")
 
-    stock_path = PROJECT_ROOT / stock_config[stock_name]
+    stock_path = resolve_project_path(stock_config[stock_name])
     if not stock_path.exists():
         raise FileNotFoundError(
             f"Required stock file {stock_path} does not exist. Create it with runtime/aizynthfinder/2-prepare-stock.py."
         )
 
-    config["stock"] = {stock_name: stock_config[stock_name]}
+    config["stock"] = {stock_name: str(stock_path)}
+    for policy_config in config.get("expansion", {}).values():
+        for index, path in enumerate(policy_config):
+            policy_config[index] = str(resolve_project_path(path))
+    for policy_name, path in config.get("filter", {}).items():
+        config["filter"][policy_name] = str(resolve_project_path(path))
+
+    molecule_cost = config.get("search", {}).get("algorithm_config", {}).get("molecule_cost", {})
+    if "model_path" in molecule_cost:
+        molecule_cost["model_path"] = str(resolve_project_path(molecule_cost["model_path"]))
+
     if effort == "high":
         config.setdefault("search", {})["iteration_limit"] = 500
     return config
+
+
+def resolve_project_path(path: str) -> Path:
+    value = Path(path)
+    return value if value.is_absolute() else PROJECT_ROOT / value
 
 
 @contextmanager
@@ -103,10 +116,13 @@ def run_aizynthfinder_predictions(
     targets = list(benchmark.targets.values())
     if limit is not None:
         targets = targets[:limit]
-    os.chdir(PROJECT_ROOT)
 
     assert benchmark.stock_name is not None
     config = load_config(config_path, benchmark.stock_name, effort)
+    finder = AiZynthFinder(configdict=config)
+    finder.stock.select(benchmark.stock_name)
+    finder.expansion_policy.select("uspto")
+    finder.filter_policy.select("uspto")
 
     with create_cli_progress(console=Console(), unit="target") as progress:
         progress_task = progress.add_task("Finding retrosynthetic paths", total=len(targets))
@@ -114,12 +130,8 @@ def run_aizynthfinder_predictions(
             for target in targets:
                 with timer.measure(target.id):
                     try:
-                        finder = AiZynthFinder(configdict=copy.deepcopy(config))
-                        finder.stock.select(benchmark.stock_name)
-                        finder.expansion_policy.select("uspto")
-                        finder.filter_policy.select("uspto")
-
                         finder.target_smiles = target.smiles
+                        finder.prepare_tree()
                         finder.tree_search()
                         finder.build_routes()
                         stats = finder.extract_statistics()
