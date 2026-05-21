@@ -96,11 +96,12 @@ def resolve_project_path(path: str) -> Path:
 @contextmanager
 def quiet_progress_info_logs() -> Iterator[None]:
     """Hide info/debug logs while progress owns the terminal."""
+    previous_disable = logging.root.manager.disable
     logging.disable(logging.INFO)
     try:
         yield
     finally:
-        logging.disable(logging.DEBUG)
+        logging.disable(previous_disable)
 
 
 def run_aizynthfinder_predictions(

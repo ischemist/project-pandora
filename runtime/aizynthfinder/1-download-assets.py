@@ -73,7 +73,7 @@ def main() -> None:
     try:
         for filespec in FILES_TO_DOWNLOAD.values():
             _download_file(filespec["url"], path / filespec["filename"])
-    except requests.HTTPError as err:
+    except requests.RequestException as err:
         print(f"Download failed with message {str(err)}")
         sys.exit(1)
 

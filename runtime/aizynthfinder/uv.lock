@@ -58,7 +58,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aizynthfinder", specifier = ">=4.4.1" },
+    { name = "aizynthfinder", specifier = "==4.4.1" },
     { name = "retrocast", specifier = "==0.6.0" },
 ]
 

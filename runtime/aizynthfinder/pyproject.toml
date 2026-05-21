@@ -3,7 +3,7 @@ name = "aizynthfinder-wrapper"
 version = "0.1.0"
 requires-python = ">=3.11, <3.13"
 dependencies = [
-    "aizynthfinder>=4.4.1",
+    "aizynthfinder==4.4.1",
     "retrocast==0.6.0",
 ]
 
