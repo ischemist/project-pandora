@@ -1,0 +1,41 @@
+[project]
+name = "project-pandora-smoke"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-sugar>=1.1.1",
+    "ruff>=0.15.12",
+    "ty>=0.0.35",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = [
+    "--durations=0",
+    "--durations-min=0.0",
+]
+markers = [
+    "smoke: end-to-end runtime smoke tests",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = [
+    "scripts",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ty.environment]
+python-version = "3.11"
+
+[tool.ty.src]
+include = [
+    "tests",
+]

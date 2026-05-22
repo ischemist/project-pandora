@@ -13,6 +13,7 @@ Results are saved to: data/retrocast/2-raw/synplanner-{version}-mcts-rollout[-{e
 """
 
 import yaml
+from retrocast.utils.logging import configure_script_logging, logger
 from synplan.mcts.tree import TreeConfig
 from synplan.utils.config import RolloutEvaluationConfig
 from synplan.utils.loading import load_evaluation_function, load_reaction_rules
@@ -24,8 +25,6 @@ from utils import (
     run_synplanner_predictions,
     save_synplanner_results,
 )
-
-from retrocast.utils.logging import configure_script_logging, logger
 
 configure_script_logging()
 # Synplanner version - update when upgrading the library
