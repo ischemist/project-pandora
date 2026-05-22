@@ -166,6 +166,7 @@ def save_synplanner_results(
         script_name: Name of the calling script (for manifest).
         benchmark: Benchmark object (for statistics).
         planner_version: Version of the Synplanner library used.
+        parameters: Extra manifest parameters to record.
     """
     solved_count = sum(1 for routes in results.values() if routes)
 
