@@ -7,12 +7,17 @@ dependencies = []
 [dependency-groups]
 dev = [
     "pytest>=8.0",
+    "pytest-sugar>=1.1.1",
     "ruff>=0.15.12",
     "ty>=0.0.35",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = [
+    "--durations=0",
+    "--durations-min=0.0",
+]
 markers = [
     "smoke: end-to-end runtime smoke tests",
 ]

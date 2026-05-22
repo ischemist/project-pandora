@@ -34,11 +34,18 @@ def create_benchmark_parser(description: str) -> argparse.ArgumentParser:
         help="Name of the benchmark set (e.g. random-n5-50)",
     )
     parser.add_argument(
-        "--effort",
-        type=str,
-        default="normal",
-        choices=["normal", "high"],
-        help="Search effort level: normal or high",
+        "--iteration-limit",
+        type=int,
+        default=100,
+        choices=[100, 500],
+        help="Maximum tree search iterations.",
+    )
+    parser.add_argument(
+        "--max-transforms",
+        type=int,
+        default=6,
+        choices=[6, 10],
+        help="Maximum route depth to search.",
     )
     parser.add_argument(
         "--limit",
@@ -58,39 +65,41 @@ def load_aizynthfinder_benchmark(
     return benchmark, bench_path
 
 
-def load_config(config_path: Path, stock_name: str, effort: str) -> dict[str, Any]:
+def load_config(config_path: Path, stock_name: str, iteration_limit: int, max_transforms: int) -> dict[str, Any]:
     with open(config_path, encoding="utf-8") as fileobj:
-        config = yaml.safe_load(fileobj)
+        config: dict[str, Any] = yaml.safe_load(fileobj)
 
-    stock_config = config.get("stock", {})
+    def project_path(value: str) -> Path:
+        path = Path(value)
+        return path if path.is_absolute() else PROJECT_ROOT / path
+
+    stock_config = config["stock"]
     if stock_name not in stock_config:
         raise KeyError(f"Stock {stock_name!r} not found in {config_path}")
 
-    stock_path = resolve_project_path(stock_config[stock_name])
+    stock_path = project_path(stock_config[stock_name])
     if not stock_path.exists():
         raise FileNotFoundError(
-            f"Required stock file {stock_path} does not exist. Create it with runtime/aizynthfinder/2-prepare-stock.py."
+            f"Required stock file {stock_path} does not exist. "
+            "Create it with runtime/aizynthfinder/dev/prepare-stock.py."
         )
 
     config["stock"] = {stock_name: str(stock_path)}
-    for policy_config in config.get("expansion", {}).values():
-        for index, path in enumerate(policy_config):
-            policy_config[index] = str(resolve_project_path(path))
-    for policy_name, path in config.get("filter", {}).items():
-        config["filter"][policy_name] = str(resolve_project_path(path))
+    config["expansion"] = {
+        policy_name: [str(project_path(path)) for path in paths]
+        for policy_name, paths in config.get("expansion", {}).items()
+    }
+    config["filter"] = {policy_name: str(project_path(path)) for policy_name, path in config.get("filter", {}).items()}
 
-    molecule_cost = config.get("search", {}).get("algorithm_config", {}).get("molecule_cost", {})
+    search_config = config.setdefault("search", {})
+    search_config["iteration_limit"] = iteration_limit
+    search_config["max_transforms"] = max_transforms
+
+    molecule_cost = search_config.get("algorithm_config", {}).get("molecule_cost", {})
     if "model_path" in molecule_cost:
-        molecule_cost["model_path"] = str(resolve_project_path(molecule_cost["model_path"]))
+        molecule_cost["model_path"] = str(project_path(molecule_cost["model_path"]))
 
-    if effort == "high":
-        config.setdefault("search", {})["iteration_limit"] = 500
     return config
-
-
-def resolve_project_path(path: str) -> Path:
-    value = Path(path)
-    return value if value.is_absolute() else PROJECT_ROOT / value
 
 
 @contextmanager
@@ -108,7 +117,8 @@ def run_aizynthfinder_predictions(
     benchmark: BenchmarkSet,
     config_path: Path,
     *,
-    effort: str,
+    iteration_limit: int,
+    max_transforms: int,
     limit: int | None,
 ) -> tuple[dict[str, dict[str, Any]], int, ExecutionStats]:
     results: dict[str, dict[str, Any]] = {}
@@ -119,7 +129,7 @@ def run_aizynthfinder_predictions(
         targets = targets[:limit]
 
     assert benchmark.stock_name is not None
-    config = load_config(config_path, benchmark.stock_name, effort)
+    config = load_config(config_path, benchmark.stock_name, iteration_limit, max_transforms)
     finder = AiZynthFinder(configdict=config)
     finder.stock.select(benchmark.stock_name)
     finder.expansion_policy.select("uspto")
@@ -169,6 +179,8 @@ def save_aizynthfinder_results(
     script_name: str,
     benchmark: BenchmarkSet,
     planner_version: str,
+    iteration_limit: int,
+    max_transforms: int,
     solved_count: int,
 ) -> None:
     summary = {
@@ -187,6 +199,8 @@ def save_aizynthfinder_results(
         parameters={
             "adapter": "aizynthfinder",
             "planner_version": planner_version,
+            "iteration_limit": iteration_limit,
+            "max_transforms": max_transforms,
             "raw_results_filename": "results.json.gz",
         },
         statistics=summary,

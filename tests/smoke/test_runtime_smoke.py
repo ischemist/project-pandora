@@ -30,11 +30,13 @@ class RuntimeSmokeCase:
 
 AIZYNTHFINDER_REQUIRED = (
     AIZYNTHFINDER_ASSETS / "config-mcts.yaml",
+    AIZYNTHFINDER_ASSETS / "config-retrostar.yaml",
     AIZYNTHFINDER_ASSETS / "uspto_model.onnx",
     AIZYNTHFINDER_ASSETS / "uspto_templates.csv.gz",
     AIZYNTHFINDER_ASSETS / "uspto_ringbreaker_model.onnx",
     AIZYNTHFINDER_ASSETS / "uspto_ringbreaker_templates.csv.gz",
     AIZYNTHFINDER_ASSETS / "uspto_filter_model.onnx",
+    AIZYNTHFINDER_ASSETS / "retrostar_value_model.pickle",
     STOCKS / "n5-stock.hdf5",
 )
 
@@ -43,17 +45,16 @@ SMOKE_CASES = (
     RuntimeSmokeCase(
         name="aizynthfinder-mcts",
         runtime_dir=PROJECT_ROOT / "runtime" / "aizynthfinder",
-        args=("3-run-aizyn-mcts.py", "--benchmark", "smoke-random-n5-3"),
-        output_dir=RAW / "aizynthfinder-4.4.1-mcts" / "smoke-random-n5-3",
+        args=("2-run-aizyn-mcts.py", "--benchmark", "smoke-random-n5-3"),
+        output_dir=RAW / "aizynthfinder-4.4.1-mcts-iter100-depth6" / "smoke-random-n5-3",
         required_paths=AIZYNTHFINDER_REQUIRED,
     ),
     RuntimeSmokeCase(
-        name="aizynthfinder-mcts-high",
+        name="aizynthfinder-retrostar",
         runtime_dir=PROJECT_ROOT / "runtime" / "aizynthfinder",
-        args=("3-run-aizyn-mcts.py", "--benchmark", "smoke-random-n5-3", "--effort", "high", "--limit", "1"),
-        output_dir=RAW / "aizynthfinder-4.4.1-mcts-high" / "smoke-random-n5-3",
+        args=("3-run-aizyn-retro-star.py", "--benchmark", "smoke-random-n5-3", "--limit", "1"),
+        output_dir=RAW / "aizynthfinder-4.4.1-retro-star-iter100-depth6" / "smoke-random-n5-3",
         required_paths=AIZYNTHFINDER_REQUIRED,
-        timeout_s=240,
     ),
 )
 

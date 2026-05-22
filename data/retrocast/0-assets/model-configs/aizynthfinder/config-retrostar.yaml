@@ -13,7 +13,7 @@ stock:
   n5-stock: data/retrocast/1-benchmarks/stocks/n5-stock.hdf5
 search:
   iteration_limit: 100
-  max_transforms: 10
+  max_transforms: 6
   algorithm: aizynthfinder.search.retrostar.search_tree.SearchTree
   algorithm_config:
     molecule_cost:

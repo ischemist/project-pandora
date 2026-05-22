@@ -2,7 +2,9 @@
 Run AiZynthFinder Retro* retrosynthesis predictions on a batch of targets.
 
 Example usage:
-    uv run --directory runtime/aizynthfinder 4-run-aizyn-retro-star.py --benchmark random-n5-50 --limit 2
+    uv run --directory runtime/aizynthfinder 3-run-aizyn-retro-star.py --benchmark random-n5-50 --limit 2
+    uv run --directory runtime/aizynthfinder 3-run-aizyn-retro-star.py \
+        --benchmark random-n5-50 --iteration-limit 500 --max-transforms 10 --limit 2
 
 Ubuntu runtime deps:
     sudo apt-get install -y libxrender1 libxext6 libsm6
@@ -30,23 +32,21 @@ if __name__ == "__main__":
 
     benchmark, bench_path = load_aizynthfinder_benchmark(args.benchmark)
 
-    folder_name = (
-        f"aizynthfinder-{PLANNER_VERSION}-retro-star"
-        if args.effort == "normal"
-        else f"aizynthfinder-{PLANNER_VERSION}-retro-star-{args.effort}"
-    )
+    folder_name = f"aizynthfinder-{PLANNER_VERSION}-retro-star-iter{args.iteration_limit}-depth{args.max_transforms}"
     save_dir = RAW_DIR / folder_name / benchmark.name
     save_dir.mkdir(parents=True, exist_ok=True)
 
     config_path = AIZYNTHFINDER_DIR / "config-retrostar.yaml"
 
     logger.info(f"stock: {benchmark.stock_name}")
-    logger.info(f"effort: {args.effort} (config: {config_path.name})")
+    logger.info(f"iteration limit: {args.iteration_limit} (config: {config_path.name})")
+    logger.info(f"max transforms: {args.max_transforms}")
 
     results, solved_count, runtime = run_aizynthfinder_predictions(
         benchmark=benchmark,
         config_path=config_path,
-        effort=args.effort,
+        iteration_limit=args.iteration_limit,
+        max_transforms=args.max_transforms,
         limit=args.limit,
     )
 
@@ -56,8 +56,10 @@ if __name__ == "__main__":
         save_dir=save_dir,
         bench_path=bench_path,
         config_path=config_path,
-        script_name="runtime/aizynthfinder/4-run-aizyn-retro-star.py",
+        script_name="runtime/aizynthfinder/3-run-aizyn-retro-star.py",
         benchmark=benchmark,
         planner_version=PLANNER_VERSION,
+        iteration_limit=args.iteration_limit,
+        max_transforms=args.max_transforms,
         solved_count=solved_count,
     )
