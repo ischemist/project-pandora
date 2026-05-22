@@ -1,3 +1,7 @@
+resources:
+  reaction_rules: data/retrocast/0-assets/model-configs/synplanner/uspto/uspto_reaction_rules.pickle
+  ranking_weights: data/retrocast/0-assets/model-configs/synplanner/uspto/weights/ranking_policy_network.ckpt
+  filtering_weights: data/retrocast/0-assets/model-configs/synplanner/uspto/weights/filtering_policy_network.ckpt
 tree:
   max_iterations: 100
   max_tree_size: 1000000
