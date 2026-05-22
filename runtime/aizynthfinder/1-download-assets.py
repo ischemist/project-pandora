@@ -26,10 +26,6 @@ FILES_TO_DOWNLOAD = {
         "filename": "uspto_ringbreaker_templates.csv.gz",
         "url": "https://zenodo.org/record/7341155/files/uspto_ringbreaker_unique_templates.csv.gz",
     },
-    "stock": {
-        "filename": "zinc_stock.hdf5",
-        "url": "https://ndownloader.figshare.com/files/23086469",
-    },
     "filter_policy_onnx": {
         "filename": "uspto_filter_model.onnx",
         "url": "https://zenodo.org/record/7797465/files/uspto_filter_model.onnx",
