@@ -11,7 +11,6 @@ from typing import Any
 import yaml
 from retrocast.io import create_manifest, load_benchmark, save_execution_stats, save_json_gz
 from retrocast.models.benchmark import BenchmarkSet, ExecutionStats
-from retrocast.paths import get_paths
 from retrocast.utils import ExecutionTimer
 from retrocast.utils.logging import logger
 from synplan.chem.reaction_routes.io import make_json
@@ -25,10 +24,9 @@ from tqdm import tqdm
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = PROJECT_ROOT / "data" / "retrocast"
 SYNPLANNER_DIR = DATA_DIR / "0-assets" / "model-configs" / "synplanner"
-PATHS = get_paths(DATA_DIR)
-STOCKS_DIR = PATHS["stocks"]
-BENCHMARKS_DIR = PATHS["benchmarks"]
-RAW_DIR = PATHS["raw"]
+STOCKS_DIR = DATA_DIR / "1-benchmarks" / "stocks"
+BENCHMARKS_DIR = DATA_DIR / "1-benchmarks" / "definitions"
+RAW_DIR = DATA_DIR / "2-raw"
 
 
 def create_benchmark_parser(description: str) -> argparse.ArgumentParser:
@@ -196,7 +194,7 @@ def save_synplanner_results(
         parameters=manifest_parameters,
     )
 
-    with open(save_dir / "manifest.json", "w") as f:
+    with open(save_dir / "manifest.json", "w", encoding="utf-8") as f:
         f.write(manifest.model_dump_json(indent=2))
 
     logger.info(f"Completed processing {len(benchmark.targets)} targets")
