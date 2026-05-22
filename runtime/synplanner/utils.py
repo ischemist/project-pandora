@@ -5,13 +5,12 @@ from __future__ import annotations
 import argparse
 import gzip
 from collections.abc import Callable
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import yaml
 from retrocast.io import create_manifest, load_benchmark, save_execution_stats, save_json_gz
 from retrocast.models.benchmark import BenchmarkSet, ExecutionStats
-from retrocast.paths import get_paths
 from retrocast.utils import ExecutionTimer
 from retrocast.utils.logging import logger
 from synplan.chem.reaction_routes.io import make_json
@@ -22,55 +21,15 @@ from synplan.utils.config import CombinedPolicyConfig, PolicyNetworkConfig
 from synplan.utils.loading import load_building_blocks, load_combined_policy_function, load_policy_function
 from tqdm import tqdm
 
-
-@dataclass
-class SynplannerPaths:
-    """Standard paths for Synplanner resources."""
-
-    synplanner_dir: Path
-    stocks_dir: Path
-    benchmarks_dir: Path
-    raw_dir: Path
-    filtering_weights: Path
-    ranking_weights: Path
-    reaction_rules: Path
-
-
-def get_synplanner_paths() -> SynplannerPaths:
-    """Get standard Synplanner paths using project root resolution.
-
-    Computes the project root from this file's location to ensure paths
-    resolve correctly regardless of working directory (needed when running
-    with `uv run --directory` to use the local lockfile).
-
-    Returns:
-        SynplannerPaths with all standard resource paths.
-    """
-    project_root = Path(__file__).resolve().parents[3]
-    data_dir = project_root / "data" / "retrocast"
-    paths = get_paths(data_dir)
-    synplanner_dir = data_dir / "0-assets" / "model-configs" / "synplanner"
-
-    return SynplannerPaths(
-        synplanner_dir=synplanner_dir,
-        stocks_dir=paths["stocks"],
-        benchmarks_dir=paths["benchmarks"],
-        raw_dir=paths["raw"],
-        filtering_weights=synplanner_dir / "uspto" / "weights" / "filtering_policy_network.ckpt",
-        ranking_weights=synplanner_dir / "uspto" / "weights" / "ranking_policy_network.ckpt",
-        reaction_rules=synplanner_dir / "uspto" / "uspto_reaction_rules.pickle",
-    )
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DATA_DIR = PROJECT_ROOT / "data" / "retrocast"
+SYNPLANNER_DIR = DATA_DIR / "0-assets" / "model-configs" / "synplanner"
+STOCKS_DIR = DATA_DIR / "1-benchmarks" / "stocks"
+BENCHMARKS_DIR = DATA_DIR / "1-benchmarks" / "definitions"
+RAW_DIR = DATA_DIR / "2-raw"
 
 
 def create_benchmark_parser(description: str) -> argparse.ArgumentParser:
-    """Create standard argument parser for Synplanner benchmark scripts.
-
-    Args:
-        description: Script description for help text.
-
-    Returns:
-        Configured ArgumentParser with --benchmark and --effort arguments.
-    """
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
         "--benchmark",
@@ -78,37 +37,17 @@ def create_benchmark_parser(description: str) -> argparse.ArgumentParser:
         required=True,
         help="Name of the benchmark set (e.g. stratified-linear-600)",
     )
-    parser.add_argument(
-        "--effort",
-        type=str,
-        default="normal",
-        choices=["normal", "high"],
-        help="Search effort level: normal or high",
-    )
     return parser
 
 
 def load_benchmark_and_stock(
     benchmark_name: str,
-    paths: SynplannerPaths,
 ) -> tuple[BenchmarkSet, set[str], Path, Path]:
-    """Load benchmark definition and corresponding building blocks.
-
-    Args:
-        benchmark_name: Name of the benchmark (without extension).
-        paths: SynplannerPaths instance with resource locations.
-
-    Returns:
-        Tuple of (benchmark, building_blocks, bench_path, stock_path).
-
-    Raises:
-        AssertionError: If benchmark has no stock_name defined.
-    """
-    bench_path = paths.benchmarks_dir / f"{benchmark_name}.json.gz"
+    bench_path = BENCHMARKS_DIR / f"{benchmark_name}.json.gz"
     benchmark = load_benchmark(bench_path)
     assert benchmark.stock_name is not None, f"Stock name not found in benchmark {benchmark_name}"
 
-    stock_path = paths.stocks_dir / f"{benchmark.stock_name}.csv.gz"
+    stock_path = STOCKS_DIR / f"{benchmark.stock_name}.csv.gz"
     building_blocks = load_building_blocks_cached(stock_path)
 
     return benchmark, building_blocks, bench_path, stock_path
@@ -116,31 +55,32 @@ def load_benchmark_and_stock(
 
 def load_policy_from_config(
     policy_params: dict,
-    filtering_weights_path: str,
-    ranking_weights_path: str,
+    resources: dict[str, str],
 ) -> Callable:
-    """Loads the appropriate policy function based on configuration.
-
-    Args:
-        policy_params: Dictionary containing policy configuration, including 'mode'
-            ('ranking' or 'combined'), 'top_rules', and 'rule_prob_threshold'.
-        filtering_weights_path: Path to the filtering policy network weights.
-        ranking_weights_path: Path to the ranking policy network weights.
-
-    Returns:
-        The loaded policy function callable.
-    """
     mode = policy_params.get("mode", "ranking")
     if mode == "combined":
         combined_policy_config = CombinedPolicyConfig(
-            filtering_weights_path=filtering_weights_path,
-            ranking_weights_path=ranking_weights_path,
+            filtering_weights_path=resources["filtering_weights"],
+            ranking_weights_path=resources["ranking_weights"],
             top_rules=policy_params.get("top_rules", 50),
             rule_prob_threshold=policy_params.get("rule_prob_threshold", 0.0),
         )
         return load_combined_policy_function(combined_config=combined_policy_config)
-    # 'ranking' or other modes
-    return load_policy_function(policy_config=PolicyNetworkConfig(weights_path=ranking_weights_path))
+    return load_policy_function(policy_config=PolicyNetworkConfig(weights_path=resources["ranking_weights"]))
+
+
+def load_synplanner_config(config_path: Path) -> dict[str, Any]:
+    with open(config_path, encoding="utf-8") as file:
+        config: dict[str, Any] = yaml.safe_load(file)
+
+    for key, value in config["resources"].items():
+        path = Path(value)
+        resolved_path = path if path.is_absolute() else PROJECT_ROOT / path
+        if not resolved_path.exists():
+            raise FileNotFoundError(f"Required Synplanner resource {key!r} not found at {resolved_path}")
+        config["resources"][key] = str(resolved_path)
+
+    return config
 
 
 def run_synplanner_predictions(
@@ -212,6 +152,7 @@ def save_synplanner_results(
     script_name: str,
     benchmark: BenchmarkSet,
     planner_version: str,
+    parameters: dict[str, Any] | None = None,
 ) -> None:
     """Save Synplanner results, execution stats, and manifest.
 
@@ -225,6 +166,7 @@ def save_synplanner_results(
         script_name: Name of the calling script (for manifest).
         benchmark: Benchmark object (for statistics).
         planner_version: Version of the Synplanner library used.
+        parameters: Extra manifest parameters to record.
     """
     solved_count = sum(1 for routes in results.values() if routes)
 
@@ -236,20 +178,24 @@ def save_synplanner_results(
     save_json_gz(results, save_dir / "results.json.gz")
     save_execution_stats(runtime, save_dir / "execution_stats.json.gz")
 
+    manifest_parameters = {
+        "adapter": "synplanner",
+        "planner_version": planner_version,
+        "raw_results_filename": "results.json.gz",
+    }
+    if parameters:
+        manifest_parameters.update(parameters)
+
     manifest = create_manifest(
         action=script_name,
         sources=[bench_path, stock_path, config_path],
         root_dir=save_dir.parents[2],  # data/retrocast directory
         outputs=[(save_dir / "results.json.gz", results, "unknown")],
         statistics=summary,
-        directives={
-            "adapter": "synplanner",
-            "planner_version": planner_version,
-            "raw_results_filename": "results.json.gz",
-        },
+        parameters=manifest_parameters,
     )
 
-    with open(save_dir / "manifest.json", "w") as f:
+    with open(save_dir / "manifest.json", "w", encoding="utf-8") as f:
         f.write(manifest.model_dump_json(indent=2))
 
     logger.info(f"Completed processing {len(benchmark.targets)} targets")

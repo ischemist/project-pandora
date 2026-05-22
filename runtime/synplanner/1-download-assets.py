@@ -4,9 +4,7 @@ Usage:
 """
 
 from synplan.utils.loading import download_selected_files
-from utils import get_synplanner_paths
-
-paths = get_synplanner_paths()
+from utils import SYNPLANNER_DIR
 
 assets = [
     ("uspto", "uspto_reaction_rules.pickle"),
@@ -15,4 +13,4 @@ assets = [
     ("uspto/weights", "value_network.ckpt"),
 ]
 
-download_selected_files(files_to_get=assets, save_to=paths.synplanner_dir, extract_zips=True)
+download_selected_files(files_to_get=assets, save_to=SYNPLANNER_DIR, extract_zips=True)

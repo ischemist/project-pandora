@@ -6,22 +6,24 @@ algorithm and saves results in a structured format matching other prediction scr
 
 Example usage:
     uv run --directory runtime/synplanner 4-run-synp-nmcs.py --benchmark uspto-190
-    uv run --directory runtime/synplanner 4-run-synp-nmcs.py --benchmark random-n5-2-seed=20251030 --effort high
+    uv run --directory runtime/synplanner 4-run-synp-nmcs.py \
+        --benchmark random-n5-2-seed=20251030 --iteration-limit 100 --max-time 120
 
 The benchmark definition should be located at: data/retrocast/1-benchmarks/definitions/{benchmark_name}.json.gz
-Results are saved to: data/retrocast/2-raw/synplanner-{version}-nmcs[-{effort}]/{benchmark_name}/
+Results are saved to: data/retrocast/2-raw/synplanner-{version}-nmcs-iter{iteration_limit}-time{max_time}/{benchmark_name}/
 """
 
-import yaml
 from retrocast.utils.logging import configure_script_logging, logger
 from synplan.mcts.tree import TreeConfig
 from synplan.utils.config import RolloutEvaluationConfig
 from synplan.utils.loading import load_evaluation_function, load_reaction_rules
 from utils import (
+    RAW_DIR,
+    SYNPLANNER_DIR,
     create_benchmark_parser,
-    get_synplanner_paths,
     load_benchmark_and_stock,
     load_policy_from_config,
+    load_synplanner_config,
     run_synplanner_predictions,
     save_synplanner_results,
 )
@@ -31,42 +33,46 @@ configure_script_logging()
 PLANNER_VERSION = "1.3.2"
 if __name__ == "__main__":
     parser = create_benchmark_parser("Run Synplanner NMCS (Nested Monte Carlo Search)")
+    parser.add_argument(
+        "--iteration-limit",
+        type=int,
+        default=1,
+        choices=[1, 100],
+        help="Maximum tree search iterations.",
+    )
+    parser.add_argument(
+        "--max-time",
+        type=int,
+        default=60,
+        choices=[60, 120],
+        help="Maximum search time in seconds.",
+    )
     args = parser.parse_args()
 
-    paths = get_synplanner_paths()
-    benchmark, building_blocks, bench_path, stock_path = load_benchmark_and_stock(args.benchmark, paths)
+    benchmark, building_blocks, bench_path, stock_path = load_benchmark_and_stock(args.benchmark)
 
-    # Setup output directory
-    folder_name = (
-        f"synplanner-{PLANNER_VERSION}-nmcs"
-        if args.effort == "normal"
-        else f"synplanner-{PLANNER_VERSION}-nmcs-{args.effort}"
-    )
-    save_dir = paths.raw_dir / folder_name / benchmark.name
+    folder_name = f"synplanner-{PLANNER_VERSION}-nmcs-iter{args.iteration_limit}-time{args.max_time}"
+    save_dir = RAW_DIR / folder_name / benchmark.name
     save_dir.mkdir(parents=True, exist_ok=True)
 
     logger.info(f"stock: {benchmark.stock_name}")
-    logger.info(f"effort: {args.effort}")
+    logger.info(f"iteration limit: {args.iteration_limit}")
+    logger.info(f"max time: {args.max_time}")
 
-    # Load configuration
-    config_path = paths.synplanner_dir / "nmcs-config.yaml"
+    config_path = SYNPLANNER_DIR / "nmcs-config.yaml"
+    config = load_synplanner_config(config_path)
+    resources = config["resources"]
 
-    with open(config_path, encoding="utf-8") as file:
-        config = yaml.safe_load(file)
-
-    if args.effort == "high":
-        config["tree"]["max_time"] = 120
-
+    config["tree"]["max_iterations"] = args.iteration_limit
+    config["tree"]["max_time"] = args.max_time
     tree_config = TreeConfig.from_dict(config["tree"])
 
     policy_function = load_policy_from_config(
         policy_params=config.get("node_expansion", {}),
-        filtering_weights_path=str(paths.filtering_weights),
-        ranking_weights_path=str(paths.ranking_weights),
+        resources=resources,
     )
 
-    # Load resources
-    reaction_rules = load_reaction_rules(paths.reaction_rules)
+    reaction_rules = load_reaction_rules(resources["reaction_rules"])
 
     # Create evaluation function for NMCS
     eval_config = RolloutEvaluationConfig(
@@ -101,4 +107,5 @@ if __name__ == "__main__":
         script_name="runtime/synplanner/4-run-synp-nmcs.py",
         benchmark=benchmark,
         planner_version=PLANNER_VERSION,
+        parameters={"iteration_limit": args.iteration_limit, "max_time": args.max_time},
     )
