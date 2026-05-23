@@ -31,6 +31,7 @@ class RuntimeSmokeCase:
     args: tuple[str, ...]
     output_dir: Path
     required_paths: tuple[Path, ...]
+    expected_adapter: str
     expected_targets: int = 3
     timeout_s: int = 180
 
@@ -100,7 +101,7 @@ def run_runtime_smoke(case: RuntimeSmokeCase) -> None:
     assert manifest["parameters"]["effective_config_path"].startswith("2-raw/")
     assert "adapter" not in manifest["parameters"]
     assert "raw_results_filename" not in manifest["parameters"]
-    assert manifest["directives"]["adapter"]
+    assert manifest["directives"]["adapter"] == case.expected_adapter
     assert manifest["directives"]["raw_results_filename"] == "results.json.gz"
     assert (case.output_dir / "config.effective.yaml").exists()
     if "benchmark_total_targets" in manifest["statistics"]:
