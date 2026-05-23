@@ -6,7 +6,8 @@ and saves results in a structured format matching other prediction scripts.
 
 Example usage:
     uv run --directory runtime/synplanner 3-run-synp-rollout.py --benchmark uspto-190
-    uv run --directory runtime/synplanner 3-run-synp-rollout.py --benchmark random-n5-2-seed=20251030 --iteration-limit 500
+    uv run --directory runtime/synplanner 3-run-synp-rollout.py \
+        --benchmark random-n5-2-seed=20251030 --iteration-limit 500
 
 The benchmark definition should be located at: data/retrocast/1-benchmarks/definitions/{benchmark_name}.json.gz
 Results are saved to: data/retrocast/2-raw/synplanner-{version}-mcts-rollout-iter{iteration_limit}/{benchmark_name}/
@@ -25,6 +26,7 @@ from utils import (
     load_synplanner_config,
     run_synplanner_predictions,
     save_synplanner_results,
+    write_effective_config,
 )
 
 configure_script_logging()
@@ -59,6 +61,8 @@ if __name__ == "__main__":
     tree_config = TreeConfig.from_dict(config["tree"])
     tree_config.search_strategy = "expansion_first"
     tree_config.evaluation_agg = config["node_evaluation"].get("evaluation_agg", tree_config.evaluation_agg)
+    config["tree"] = tree_config.to_dict()
+    config["stock"] = {"name": benchmark.stock_name, "path": str(stock_path)}
 
     policy_function = load_policy_from_config(
         policy_params=config.get("node_expansion", {}),
@@ -75,6 +79,15 @@ if __name__ == "__main__":
         max_depth=tree_config.max_depth,
         normalize=tree_config.normalize_scores,
     )
+    config["node_evaluation"] = {
+        **config.get("node_evaluation", {}),
+        "evaluation_type": "rollout",
+        "min_mol_size": eval_config.min_mol_size,
+        "max_depth": eval_config.max_depth,
+        "normalize": eval_config.normalize,
+        "stochastic": eval_config.stochastic,
+    }
+    effective_config_path = write_effective_config(config, save_dir)
     evaluation_function = load_evaluation_function(eval_config)
 
     logger.info("Retrosynthesis starting")
@@ -85,7 +98,16 @@ if __name__ == "__main__":
         building_blocks=building_blocks,
         expansion_function=policy_function,
         evaluation_function=evaluation_function,
+        limit=args.limit,
     )
+    parameters = {
+        "algorithm": tree_config.algorithm,
+        "iteration_limit": args.iteration_limit,
+        "search_strategy": tree_config.search_strategy,
+        "evaluation_kind": "rollout",
+    }
+    if args.limit is not None:
+        parameters["limit"] = args.limit
 
     save_synplanner_results(
         results=results,
@@ -93,9 +115,10 @@ if __name__ == "__main__":
         save_dir=save_dir,
         bench_path=bench_path,
         stock_path=stock_path,
-        config_path=config_path,
+        effective_config_path=effective_config_path,
+        config_template_path=config_path,
         script_name="runtime/synplanner/3-run-synp-rollout.py",
         benchmark=benchmark,
         planner_version=PLANNER_VERSION,
-        parameters={"iteration_limit": args.iteration_limit},
+        parameters=parameters,
     )

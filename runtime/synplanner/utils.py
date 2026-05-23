@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import gzip
+import os
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -22,11 +23,18 @@ from synplan.utils.loading import load_building_blocks, load_combined_policy_fun
 from tqdm import tqdm
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DATA_DIR = PROJECT_ROOT / "data" / "retrocast"
+DATA_DIR = Path(os.environ.get("RETROCAST_DATA_DIR", PROJECT_ROOT / "data" / "retrocast"))
 SYNPLANNER_DIR = DATA_DIR / "0-assets" / "model-configs" / "synplanner"
 STOCKS_DIR = DATA_DIR / "1-benchmarks" / "stocks"
 BENCHMARKS_DIR = DATA_DIR / "1-benchmarks" / "definitions"
 RAW_DIR = DATA_DIR / "2-raw"
+
+
+def positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return parsed
 
 
 def create_benchmark_parser(description: str) -> argparse.ArgumentParser:
@@ -36,6 +44,12 @@ def create_benchmark_parser(description: str) -> argparse.ArgumentParser:
         type=str,
         required=True,
         help="Name of the benchmark set (e.g. stratified-linear-600)",
+    )
+    parser.add_argument(
+        "--limit",
+        type=positive_int,
+        default=None,
+        help="Maximum number of targets to process. Useful for smoke tests.",
     )
     return parser
 
@@ -83,6 +97,13 @@ def load_synplanner_config(config_path: Path) -> dict[str, Any]:
     return config
 
 
+def write_effective_config(config: dict[str, Any], save_dir: Path) -> Path:
+    effective_config_path = save_dir / "config.effective.yaml"
+    with open(effective_config_path, "w", encoding="utf-8") as file:
+        yaml.safe_dump(config, file, sort_keys=True)
+    return effective_config_path
+
+
 def run_synplanner_predictions(
     benchmark: BenchmarkSet,
     tree_config: TreeConfig,
@@ -90,6 +111,7 @@ def run_synplanner_predictions(
     building_blocks: set[str],
     expansion_function: Callable,
     evaluation_function: Callable,
+    limit: int | None = None,
 ) -> tuple[dict[str, list[dict[str, Any]]], int, ExecutionStats]:
     """Run Synplanner search over all benchmark targets.
 
@@ -108,7 +130,11 @@ def run_synplanner_predictions(
     solved_count = 0
     timer = ExecutionTimer()
 
-    for target in tqdm(benchmark.targets.values(), desc="Finding retrosynthetic paths"):
+    targets = list(benchmark.targets.values())
+    if limit is not None:
+        targets = targets[:limit]
+
+    for target in tqdm(targets, desc="Finding retrosynthetic paths"):
         with timer.measure(target.id):
             try:
                 target_mol = mol_from_smiles(target.smiles, standardize=True)
@@ -148,7 +174,8 @@ def save_synplanner_results(
     save_dir: Path,
     bench_path: Path,
     stock_path: Path,
-    config_path: Path,
+    effective_config_path: Path,
+    config_template_path: Path,
     script_name: str,
     benchmark: BenchmarkSet,
     planner_version: str,
@@ -172,7 +199,8 @@ def save_synplanner_results(
 
     summary = {
         "solved_count": solved_count,
-        "total_targets": len(benchmark.targets),
+        "total_targets": len(results),
+        "benchmark_total_targets": len(benchmark.targets),
     }
 
     save_json_gz(results, save_dir / "results.json.gz")
@@ -182,13 +210,15 @@ def save_synplanner_results(
         "adapter": "synplanner",
         "planner_version": planner_version,
         "raw_results_filename": "results.json.gz",
+        "config_template_path": str(config_template_path.relative_to(DATA_DIR)),
+        "effective_config_path": str(effective_config_path.relative_to(DATA_DIR)),
     }
     if parameters:
         manifest_parameters.update(parameters)
 
     manifest = create_manifest(
         action=script_name,
-        sources=[bench_path, stock_path, config_path],
+        sources=[bench_path, stock_path, effective_config_path],
         root_dir=save_dir.parents[2],  # data/retrocast directory
         outputs=[(save_dir / "results.json.gz", results, "unknown")],
         statistics=summary,

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -19,10 +20,17 @@ from retrocast.utils.logging import logger
 from rich.console import Console
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DATA_DIR = PROJECT_ROOT / "data" / "retrocast"
+DATA_DIR = Path(os.environ.get("RETROCAST_DATA_DIR", PROJECT_ROOT / "data" / "retrocast"))
 AIZYNTHFINDER_DIR = DATA_DIR / "0-assets" / "model-configs" / "aizynthfinder"
 BENCHMARKS_DIR = DATA_DIR / "1-benchmarks" / "definitions"
 RAW_DIR = DATA_DIR / "2-raw"
+
+
+def positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return parsed
 
 
 def create_benchmark_parser(description: str) -> argparse.ArgumentParser:
@@ -49,7 +57,7 @@ def create_benchmark_parser(description: str) -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--limit",
-        type=int,
+        type=positive_int,
         default=None,
         help="Maximum number of targets to process. Useful for smoke tests.",
     )
@@ -102,6 +110,13 @@ def load_config(config_path: Path, stock_name: str, iteration_limit: int, max_tr
     return config
 
 
+def write_effective_config(config: dict[str, Any], save_dir: Path) -> Path:
+    effective_config_path = save_dir / "config.effective.yaml"
+    with open(effective_config_path, "w", encoding="utf-8") as fileobj:
+        yaml.safe_dump(config, fileobj, sort_keys=True)
+    return effective_config_path
+
+
 @contextmanager
 def quiet_progress_info_logs() -> Iterator[None]:
     """Hide info/debug logs while progress owns the terminal."""
@@ -115,10 +130,8 @@ def quiet_progress_info_logs() -> Iterator[None]:
 
 def run_aizynthfinder_predictions(
     benchmark: BenchmarkSet,
-    config_path: Path,
+    config: dict[str, Any],
     *,
-    iteration_limit: int,
-    max_transforms: int,
     limit: int | None,
 ) -> tuple[dict[str, dict[str, Any]], int, ExecutionStats]:
     results: dict[str, dict[str, Any]] = {}
@@ -128,8 +141,6 @@ def run_aizynthfinder_predictions(
     if limit is not None:
         targets = targets[:limit]
 
-    assert benchmark.stock_name is not None
-    config = load_config(config_path, benchmark.stock_name, iteration_limit, max_transforms)
     finder = AiZynthFinder(configdict=config)
     finder.stock.select(benchmark.stock_name)
     finder.expansion_policy.select("uspto")
@@ -175,12 +186,11 @@ def save_aizynthfinder_results(
     runtime: ExecutionStats,
     save_dir: Path,
     bench_path: Path,
-    config_path: Path,
+    effective_config_path: Path,
+    config_template_path: Path,
     script_name: str,
     benchmark: BenchmarkSet,
-    planner_version: str,
-    iteration_limit: int,
-    max_transforms: int,
+    parameters: dict[str, Any],
     solved_count: int,
 ) -> None:
     summary = {
@@ -191,18 +201,20 @@ def save_aizynthfinder_results(
 
     save_json_gz(results, save_dir / "results.json.gz")
     save_execution_stats(runtime, save_dir / "execution_stats.json.gz")
+    manifest_parameters = {
+        **parameters,
+        "adapter": "aizynthfinder",
+        "raw_results_filename": "results.json.gz",
+        "config_template_path": str(config_template_path.relative_to(DATA_DIR)),
+        "effective_config_path": str(effective_config_path.relative_to(DATA_DIR)),
+    }
+
     manifest = create_manifest(
         action=script_name,
-        sources=[bench_path, config_path],
+        sources=[bench_path, effective_config_path],
         root_dir=save_dir.parents[2],
         outputs=[(save_dir / "results.json.gz", results, "unknown")],
-        parameters={
-            "adapter": "aizynthfinder",
-            "planner_version": planner_version,
-            "iteration_limit": iteration_limit,
-            "max_transforms": max_transforms,
-            "raw_results_filename": "results.json.gz",
-        },
+        parameters=manifest_parameters,
         statistics=summary,
     )
 
