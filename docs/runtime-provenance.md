@@ -39,6 +39,7 @@ examples:
 
 - `adapter`
 - `planner_version`
+- `algorithm`
 - `raw_results_filename`
 - `config_template_path`
 - `effective_config_path`
@@ -116,6 +117,6 @@ every raw runner must satisfy these rules.
 
 10. store high-level cli knobs in manifest `parameters`, even when they also appear in the effective config.
 
-11. manifest paths must be relative to `data/retrocast`.
+11. manifest paths must be relative to the active RetroCast data root, which defaults to `data/retrocast` and may be overridden with `RETROCAST_DATA_DIR`.
 
 12. `retrocast verify --target <raw-run-dir>/manifest.json` must still pass after editing `0-assets/model-configs`.

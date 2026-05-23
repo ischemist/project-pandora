@@ -26,6 +26,13 @@ BENCHMARKS_DIR = DATA_DIR / "1-benchmarks" / "definitions"
 RAW_DIR = DATA_DIR / "2-raw"
 
 
+def positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return parsed
+
+
 def create_benchmark_parser(description: str) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
@@ -50,7 +57,7 @@ def create_benchmark_parser(description: str) -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--limit",
-        type=int,
+        type=positive_int,
         default=None,
         help="Maximum number of targets to process. Useful for smoke tests.",
     )

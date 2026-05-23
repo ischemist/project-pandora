@@ -101,6 +101,7 @@ if __name__ == "__main__":
         limit=args.limit,
     )
     parameters = {
+        "algorithm": tree_config.algorithm,
         "iteration_limit": args.iteration_limit,
         "search_strategy": tree_config.search_strategy,
         "evaluation_kind": "rollout",
