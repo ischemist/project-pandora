@@ -2,7 +2,7 @@
 
 A central theme of RetroCast is clear and verifiable provenance for every workflow. This reproducibility begins with the initial execution of planners. This document defines what pandora runners must preserve when they write raw RetroCast results.
 
-Everything in this doc motivated by a single principle: when inspecting results of a particular model in the 2-raw folder, you MUST be able to see the values of every single parameter/toggle that could've affected the performance of the planner. 
+Everything in this doc is motivated by a single principle: when inspecting results of a particular model in the `2-raw` folder, you MUST be able to see the values of every parameter or toggle that could have affected planner output.
 
 Many planners specify those parameters in a config file. Default values should be placed under `data/retrocast/0-assets/model-configs`.
 
@@ -11,19 +11,29 @@ examples:
 - `0-assets/model-configs/<adapter>/<strategy>.yaml`
 - `0-assets/model-configs/<adapter>/<planner-family>.yaml`
 
-However, a user might wish to run the planner with larger maximum depth or longer time limit than the defaults, modifying those config values with cli overrides. This effective config should be written to
+However, a user might run the planner with a larger maximum depth, longer time limit, different stock, or other cli overrides. The effective config is the exact planner configuration after template defaults, cli overrides, benchmark choices, and runner-imposed choices are applied.
+
+Write the effective config to:
 
 ```bash
 2-raw/<runner>/<benchmark>/config.effective.yaml
 ```
 
-In addition to an effective config, 2-raw folder should write a manifest, which records hashed inputs, hashed outputs, and compact metadata for discovery.
+The manifest records hashed inputs, hashed outputs, and compact metadata for discovery.
 
-## what goes where
+## What goes where
 
-### manifest
+### decision rule
 
-put queryable run identity in `parameters`.
+If a value is needed to rerun the planner, put it in `config.effective.yaml`.
+
+If a value is needed to find, group, compare, or label runs, duplicate it in manifest `parameters`.
+
+Do not put a result-affecting value only in `parameters`. `parameters` are easy to query for, but they do not replace hashed planner state.
+
+### Manifest
+
+Put queryable run identity in `parameters`. Keep it compact and scalar-ish.
 
 examples:
 
@@ -39,27 +49,31 @@ examples:
 - `evaluation_kind`
 - `limit`, when a runner processes only part of a benchmark
 
-put provenance files in `source_files`.
+Put hashed provenance files in `source_files`. These are the files used as evidence for verification.
 
 examples:
 
 - benchmark definition
 - stock file, when used directly
 - `config.effective.yaml`
-- `config.template.yaml`, if the runner keeps a template copy
 
-put generated artifacts in `output_files`.
+Put generated artifacts in `output_files`.
 
 examples:
 
 - `results.json.gz`
 - other raw planner outputs consumed downstream
 
-put summary counts in `statistics`. keep execution timing in `execution_stats.json.gz`.
+Put summary counts in `statistics`. Keep execution timing in `execution_stats.json.gz`.
+
+Path fields in `parameters` identify important artifacts:
+
+- `config_template_path` records where the mutable shared template came from.
+- `effective_config_path` records where the immutable run-local effective config was written.
 
 ### effective config
 
-put complete result-affecting planner state in `config.effective.yaml`.
+Put complete result-affecting planner state in `config.effective.yaml`.
 
 examples:
 
@@ -74,7 +88,9 @@ examples:
 - selected stock used by the planner
 - inherited template defaults that affect output
 
-rule: if changing a value can change planner output, the value belongs in the effective config or in another hashed source artifact.
+Rule: if changing a value can change planner output, the value belongs in the effective config or in another hashed source artifact.
+
+The runner should hash the written effective config file by including it in manifest `source_files`.
 
 ## runner contract
 
@@ -94,7 +110,7 @@ every raw runner must satisfy these rules.
 
 7. pass the same effective config to the planner that was written to disk.
 
-8. create the manifest with the raw-directory effective config in `source_files`.
+8. create the manifest with the raw-directory effective config in `source_files`, so the effective config is hashed.
 
 9. store the original template path in manifest `parameters.config_template_path`.
 
@@ -103,17 +119,3 @@ every raw runner must satisfy these rules.
 11. manifest paths must be relative to `data/retrocast`.
 
 12. `retrocast verify --target <raw-run-dir>/manifest.json` must still pass after editing `0-assets/model-configs`.
-
-optional but recommended: copy the unmodified template to `config.template.yaml` and include it in `source_files`. this makes template-vs-effective diffs easy without relying on mutable shared assets.
-
-## review checklist
-
-before adding or changing a runner:
-
-- can the run verify after editing the shared template?
-- are result-affecting cli args in manifest `parameters`?
-- are result-affecting planner values in `config.effective.yaml`?
-- does the manifest source the copied effective config?
-- are manifest paths rooted at `data/retrocast`?
-- does the runner avoid machine-local paths unless required by the planner?
-- does `retrocast verify --target <raw-run-dir>/manifest.json` pass?
