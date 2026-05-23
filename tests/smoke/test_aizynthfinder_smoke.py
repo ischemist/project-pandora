@@ -31,6 +31,7 @@ AIZYNTHFINDER_CASES = (
         args=("2-run-aizyn-mcts.py", "--benchmark", "smoke-random-n5-3"),
         output_dir=RAW / "aizynthfinder-4.4.1-mcts-iter100-depth6" / "smoke-random-n5-3",
         required_paths=AIZYNTHFINDER_REQUIRED + (AIZYNTHFINDER_ASSETS / "config-mcts.yaml",),
+        expected_adapter="aizynthfinder",
     ),
     RuntimeSmokeCase(
         name="aizynthfinder-retrostar",
@@ -38,6 +39,7 @@ AIZYNTHFINDER_CASES = (
         args=("3-run-aizyn-retro-star.py", "--benchmark", "smoke-random-n5-3", "--limit", "1"),
         output_dir=RAW / "aizynthfinder-4.4.1-retro-star-iter100-depth6" / "smoke-random-n5-3",
         required_paths=AIZYNTHFINDER_REQUIRED + (AIZYNTHFINDER_ASSETS / "config-retrostar.yaml",),
+        expected_adapter="aizynthfinder",
         expected_targets=1,
     ),
 )

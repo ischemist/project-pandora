@@ -203,10 +203,12 @@ def save_aizynthfinder_results(
     save_execution_stats(runtime, save_dir / "execution_stats.json.gz")
     manifest_parameters = {
         **parameters,
-        "adapter": "aizynthfinder",
-        "raw_results_filename": "results.json.gz",
         "config_template_path": str(config_template_path.relative_to(DATA_DIR)),
         "effective_config_path": str(effective_config_path.relative_to(DATA_DIR)),
+    }
+    manifest_directives = {
+        "adapter": "aizynthfinder",
+        "raw_results_filename": "results.json.gz",
     }
 
     manifest = create_manifest(
@@ -215,6 +217,7 @@ def save_aizynthfinder_results(
         root_dir=save_dir.parents[2],
         outputs=[(save_dir / "results.json.gz", results, "unknown")],
         parameters=manifest_parameters,
+        directives=manifest_directives,
         statistics=summary,
     )
 
