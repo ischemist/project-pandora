@@ -10,7 +10,8 @@ Example usage:
         --benchmark random-n5-2-seed=20251030 --iteration-limit 100 --max-time 120
 
 The benchmark definition should be located at: data/retrocast/1-benchmarks/definitions/{benchmark_name}.json.gz
-Results are saved to: data/retrocast/2-raw/synplanner-{version}-nmcs-iter{iteration_limit}-time{max_time}/{benchmark_name}/
+Results are saved to:
+data/retrocast/2-raw/synplanner-{version}-nmcs-iter{iteration_limit}-time{max_time}/{benchmark_name}/
 """
 
 from retrocast.utils.logging import configure_script_logging, logger
@@ -26,6 +27,7 @@ from utils import (
     load_synplanner_config,
     run_synplanner_predictions,
     save_synplanner_results,
+    write_effective_config,
 )
 
 configure_script_logging()
@@ -66,6 +68,8 @@ if __name__ == "__main__":
     config["tree"]["max_iterations"] = args.iteration_limit
     config["tree"]["max_time"] = args.max_time
     tree_config = TreeConfig.from_dict(config["tree"])
+    config["tree"] = tree_config.to_dict()
+    config["stock"] = {"name": benchmark.stock_name, "path": str(stock_path)}
 
     policy_function = load_policy_from_config(
         policy_params=config.get("node_expansion", {}),
@@ -83,6 +87,15 @@ if __name__ == "__main__":
         max_depth=tree_config.max_depth,
         normalize=False,
     )
+    config["node_evaluation"] = {
+        **config.get("node_evaluation", {}),
+        "evaluation_type": "rollout",
+        "min_mol_size": eval_config.min_mol_size,
+        "max_depth": eval_config.max_depth,
+        "normalize": eval_config.normalize,
+        "stochastic": eval_config.stochastic,
+    }
+    effective_config_path = write_effective_config(config, save_dir)
     evaluation_function = load_evaluation_function(eval_config)
 
     # Run predictions
@@ -94,7 +107,16 @@ if __name__ == "__main__":
         building_blocks=building_blocks,
         expansion_function=policy_function,
         evaluation_function=evaluation_function,
+        limit=args.limit,
     )
+    parameters = {
+        "iteration_limit": args.iteration_limit,
+        "max_time": args.max_time,
+        "search_strategy": "nmcs",
+        "evaluation_kind": "rollout",
+    }
+    if args.limit is not None:
+        parameters["limit"] = args.limit
 
     # Save results
     save_synplanner_results(
@@ -103,9 +125,10 @@ if __name__ == "__main__":
         save_dir=save_dir,
         bench_path=bench_path,
         stock_path=stock_path,
-        config_path=config_path,
+        effective_config_path=effective_config_path,
+        config_template_path=config_path,
         script_name="runtime/synplanner/4-run-synp-nmcs.py",
         benchmark=benchmark,
         planner_version=PLANNER_VERSION,
-        parameters={"iteration_limit": args.iteration_limit, "max_time": args.max_time},
+        parameters=parameters,
     )

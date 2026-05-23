@@ -16,9 +16,11 @@ from utils import (
     RAW_DIR,
     create_benchmark_parser,
     load_aizynthfinder_benchmark,
+    load_config,
     quiet_aizynthfinder_debug_logs,
     run_aizynthfinder_predictions,
     save_aizynthfinder_results,
+    write_effective_config,
 )
 
 configure_script_logging()
@@ -42,24 +44,33 @@ if __name__ == "__main__":
     logger.info(f"iteration limit: {args.iteration_limit} (config: {config_path.name})")
     logger.info(f"max transforms: {args.max_transforms}")
 
+    assert benchmark.stock_name is not None
+    config = load_config(config_path, benchmark.stock_name, args.iteration_limit, args.max_transforms)
+    effective_config_path = write_effective_config(config, save_dir)
+
     results, solved_count, runtime = run_aizynthfinder_predictions(
         benchmark=benchmark,
-        config_path=config_path,
-        iteration_limit=args.iteration_limit,
-        max_transforms=args.max_transforms,
+        config=config,
         limit=args.limit,
     )
+    parameters = {
+        "planner_version": PLANNER_VERSION,
+        "search_strategy": "retro_star",
+        "iteration_limit": args.iteration_limit,
+        "max_transforms": args.max_transforms,
+    }
+    if args.limit is not None:
+        parameters["limit"] = args.limit
 
     save_aizynthfinder_results(
         results=results,
         runtime=runtime,
         save_dir=save_dir,
         bench_path=bench_path,
-        config_path=config_path,
+        effective_config_path=effective_config_path,
+        config_template_path=config_path,
         script_name="runtime/aizynthfinder/3-run-aizyn-retro-star.py",
         benchmark=benchmark,
-        planner_version=PLANNER_VERSION,
-        iteration_limit=args.iteration_limit,
-        max_transforms=args.max_transforms,
+        parameters=parameters,
         solved_count=solved_count,
     )
