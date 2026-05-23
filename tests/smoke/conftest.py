@@ -98,6 +98,10 @@ def run_runtime_smoke(case: RuntimeSmokeCase) -> None:
     assert len(results) == case.expected_targets
     assert manifest["statistics"]["total_targets"] == case.expected_targets
     assert manifest["parameters"]["effective_config_path"].startswith("2-raw/")
+    assert "adapter" not in manifest["parameters"]
+    assert "raw_results_filename" not in manifest["parameters"]
+    assert manifest["directives"]["adapter"]
+    assert manifest["directives"]["raw_results_filename"] == "results.json.gz"
     assert (case.output_dir / "config.effective.yaml").exists()
     if "benchmark_total_targets" in manifest["statistics"]:
         assert manifest["statistics"]["benchmark_total_targets"] == 3

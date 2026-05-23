@@ -207,14 +207,16 @@ def save_synplanner_results(
     save_execution_stats(runtime, save_dir / "execution_stats.json.gz")
 
     manifest_parameters = {
-        "adapter": "synplanner",
         "planner_version": planner_version,
-        "raw_results_filename": "results.json.gz",
         "config_template_path": str(config_template_path.relative_to(DATA_DIR)),
         "effective_config_path": str(effective_config_path.relative_to(DATA_DIR)),
     }
     if parameters:
         manifest_parameters.update(parameters)
+    manifest_directives = {
+        "adapter": "synplanner",
+        "raw_results_filename": "results.json.gz",
+    }
 
     manifest = create_manifest(
         action=script_name,
@@ -223,6 +225,7 @@ def save_synplanner_results(
         outputs=[(save_dir / "results.json.gz", results, "unknown")],
         statistics=summary,
         parameters=manifest_parameters,
+        directives=manifest_directives,
     )
 
     with open(save_dir / "manifest.json", "w", encoding="utf-8") as f:

@@ -27,7 +27,9 @@ The manifest records hashed inputs, hashed outputs, and compact metadata for dis
 
 If a value is needed to rerun the planner, put it in `config.effective.yaml`.
 
-If a value is needed to find, group, compare, or label runs, duplicate it in manifest `parameters`.
+If a value is needed to find, group, compare, or label runs, put it in manifest `parameters`.
+
+If a value tells RetroCast how to consume the raw artifact, put it in manifest `directives`.
 
 Do not put a result-affecting value only in `parameters`. `parameters` are easy to query for, but they do not replace hashed planner state.
 
@@ -37,10 +39,8 @@ Put queryable run identity in `parameters`. Keep it compact and scalar-ish.
 
 examples:
 
-- `adapter`
 - `planner_version`
 - `algorithm`
-- `raw_results_filename`
 - `config_template_path`
 - `effective_config_path`
 - `iteration_limit`
@@ -49,6 +49,13 @@ examples:
 - `search_strategy`
 - `evaluation_kind`
 - `limit`, when a runner processes only part of a benchmark
+
+Put raw artifact consumption instructions in `directives`. Do not duplicate these in `parameters`.
+
+examples:
+
+- `adapter`
+- `raw_results_filename`
 
 Put hashed provenance files in `source_files`. These are the files used as evidence for verification.
 
@@ -117,6 +124,8 @@ every raw runner must satisfy these rules.
 
 10. store high-level cli knobs in manifest `parameters`, even when they also appear in the effective config.
 
-11. manifest paths must be relative to the active RetroCast data root, which defaults to `data/retrocast` and may be overridden with `RETROCAST_DATA_DIR`.
+11. store `adapter` and `raw_results_filename` in manifest `directives`, not `parameters`.
 
-12. `retrocast verify --target <raw-run-dir>/manifest.json` must still pass after editing `0-assets/model-configs`.
+12. manifest paths must be relative to the active RetroCast data root, which defaults to `data/retrocast` and may be overridden with `RETROCAST_DATA_DIR`.
+
+13. `retrocast verify --target <raw-run-dir>/manifest.json` must still pass after editing `0-assets/model-configs`.
