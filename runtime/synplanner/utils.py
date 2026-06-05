@@ -7,13 +7,14 @@ import gzip
 import os
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 from retrocast.io import create_manifest, load_benchmark, save_execution_stats, save_json_gz
-from retrocast.models.benchmark import BenchmarkSet, ExecutionStats
+from retrocast.models.task import STOCK_TERMINATION, Benchmark, StockTerminationConstraint
 from retrocast.utils import ExecutionTimer
 from retrocast.utils.logging import logger
+from retrocast.utils.timing import ExecutionStats
 from synplan.chem.reaction_routes.io import make_json
 from synplan.chem.reaction_routes.route_cgr import extract_reactions
 from synplan.chem.utils import mol_from_smiles
@@ -56,15 +57,23 @@ def create_benchmark_parser(description: str) -> argparse.ArgumentParser:
 
 def load_benchmark_and_stock(
     benchmark_name: str,
-) -> tuple[BenchmarkSet, set[str], Path, Path]:
+) -> tuple[Benchmark, set[str], Path, Path]:
     bench_path = BENCHMARKS_DIR / f"{benchmark_name}.json.gz"
     benchmark = load_benchmark(bench_path)
-    assert benchmark.stock_name is not None, f"Stock name not found in benchmark {benchmark_name}"
+    stock_name = benchmark_stock_name(benchmark)
+    assert stock_name is not None, f"Stock name not found in benchmark {benchmark_name}"
 
-    stock_path = STOCKS_DIR / f"{benchmark.stock_name}.csv.gz"
+    stock_path = STOCKS_DIR / f"{stock_name}.csv.gz"
     building_blocks = load_building_blocks_cached(stock_path)
 
     return benchmark, building_blocks, bench_path, stock_path
+
+
+def benchmark_stock_name(benchmark: Benchmark) -> str | None:
+    for constraint in benchmark.default_constraints:
+        if constraint.kind == STOCK_TERMINATION:
+            return cast(StockTerminationConstraint, constraint).stock
+    return None
 
 
 def load_policy_from_config(
@@ -105,7 +114,7 @@ def write_effective_config(config: dict[str, Any], save_dir: Path) -> Path:
 
 
 def run_synplanner_predictions(
-    benchmark: BenchmarkSet,
+    benchmark: Benchmark,
     tree_config: TreeConfig,
     reaction_rules: Any,
     building_blocks: set[str],

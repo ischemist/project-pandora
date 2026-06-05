@@ -13,7 +13,7 @@ exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for 
 exclude-newer-span = "P7D"
 
 [options.exclude-newer-package]
-retrocast = "2026-05-21T00:00:00Z"
+retrocast = "2026-06-06T00:00:00Z"
 
 [[package]]
 name = "aizynthfinder"
@@ -59,7 +59,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "aizynthfinder", specifier = "==4.4.1" },
-    { name = "retrocast", specifier = "==0.6.0" },
+    { name = "retrocast", specifier = "==0.7.1" },
 ]
 
 [[package]]
@@ -2395,7 +2395,7 @@ wheels = [
 
 [[package]]
 name = "retrocast"
-version = "0.6"
+version = "0.7.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "packaging" },
@@ -2405,9 +2405,9 @@ dependencies = [
     { name = "rich" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/52/07/d7ad7b102b8497a99a3e1a39c219d5963be1f2c1d651a31241afb761601b/retrocast-0.6.tar.gz", hash = "sha256:44da012b949762936dfa72171f4fa00d6aff6164f567145fc0d989e9eb539c0d", size = 128872, upload-time = "2026-05-20T22:03:16.096Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/35/ba/7e6ecb73be71136f263668548af3a6c703ea0650d85295d7ece343b098e7/retrocast-0.7.1.tar.gz", hash = "sha256:4fc92930e22485432c28bf234c7088f1b2dfa349ad6a21a74e4dfd6a9a0b1584", size = 117691, upload-time = "2026-06-05T18:42:45.033Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/48/98/dcaedb0114815c7ced9449af13548ffd9aeefc5a6e29bd55634e6a955abc/retrocast-0.6-py3-none-any.whl", hash = "sha256:1ebdda9eee8f22f6171c677b3f3defedc0e4086a7917b7d020be9167ebb86c43", size = 172962, upload-time = "2026-05-20T22:03:17.489Z" },
+    { url = "https://files.pythonhosted.org/packages/f2/cd/aa11c64e25c7887ceb7c2df094d899e4ddc71018289ff6cb264e8368e282/retrocast-0.7.1-py3-none-any.whl", hash = "sha256:1e0b026d3feb14b6dff01109941334fe733aa558ebcb546dc273b78b2b9b4f1b", size = 159751, upload-time = "2026-06-05T18:42:46.254Z" },
 ]
 
 [[package]]

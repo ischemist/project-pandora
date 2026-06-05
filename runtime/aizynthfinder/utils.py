@@ -8,15 +8,16 @@ import os
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 from aizynthfinder.aizynthfinder import AiZynthFinder
 from retrocast.cli.progress import create_cli_progress
 from retrocast.io import create_manifest, load_benchmark, save_execution_stats, save_json_gz
-from retrocast.models.benchmark import BenchmarkSet, ExecutionStats
+from retrocast.models.task import STOCK_TERMINATION, Benchmark, StockTerminationConstraint
 from retrocast.utils import ExecutionTimer
 from retrocast.utils.logging import logger
+from retrocast.utils.timing import ExecutionStats
 from rich.console import Console
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -66,11 +67,18 @@ def create_benchmark_parser(description: str) -> argparse.ArgumentParser:
 
 def load_aizynthfinder_benchmark(
     benchmark_name: str,
-) -> tuple[BenchmarkSet, Path]:
+) -> tuple[Benchmark, Path]:
     bench_path = BENCHMARKS_DIR / f"{benchmark_name}.json.gz"
     benchmark = load_benchmark(bench_path)
-    assert benchmark.stock_name is not None, f"Stock name not found in benchmark {benchmark_name}"
+    assert benchmark_stock_name(benchmark) is not None, f"Stock name not found in benchmark {benchmark_name}"
     return benchmark, bench_path
+
+
+def benchmark_stock_name(benchmark: Benchmark) -> str | None:
+    for constraint in benchmark.default_constraints:
+        if constraint.kind == STOCK_TERMINATION:
+            return cast(StockTerminationConstraint, constraint).stock
+    return None
 
 
 def load_config(config_path: Path, stock_name: str, iteration_limit: int, max_transforms: int) -> dict[str, Any]:
@@ -129,7 +137,7 @@ def quiet_progress_info_logs() -> Iterator[None]:
 
 
 def run_aizynthfinder_predictions(
-    benchmark: BenchmarkSet,
+    benchmark: Benchmark,
     config: dict[str, Any],
     *,
     limit: int | None,
@@ -141,8 +149,11 @@ def run_aizynthfinder_predictions(
     if limit is not None:
         targets = targets[:limit]
 
+    stock_name = benchmark_stock_name(benchmark)
+    assert stock_name is not None
+
     finder = AiZynthFinder(configdict=config)
-    finder.stock.select(benchmark.stock_name)
+    finder.stock.select(stock_name)
     finder.expansion_policy.select("uspto")
     finder.filter_policy.select("uspto")
 
@@ -189,7 +200,7 @@ def save_aizynthfinder_results(
     effective_config_path: Path,
     config_template_path: Path,
     script_name: str,
-    benchmark: BenchmarkSet,
+    benchmark: Benchmark,
     parameters: dict[str, Any],
     solved_count: int,
 ) -> None:
