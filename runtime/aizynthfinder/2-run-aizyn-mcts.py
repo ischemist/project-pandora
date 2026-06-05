@@ -14,6 +14,7 @@ from retrocast.utils.logging import configure_script_logging, logger
 from utils import (
     AIZYNTHFINDER_DIR,
     RAW_DIR,
+    benchmark_stock_name,
     create_benchmark_parser,
     load_aizynthfinder_benchmark,
     load_config,
@@ -39,13 +40,14 @@ if __name__ == "__main__":
     save_dir.mkdir(parents=True, exist_ok=True)
 
     config_path = AIZYNTHFINDER_DIR / "config-mcts.yaml"
+    stock_name = benchmark_stock_name(benchmark)
+    assert stock_name is not None
 
-    logger.info(f"stock: {benchmark.stock_name}")
+    logger.info(f"stock: {stock_name}")
     logger.info(f"iteration limit: {args.iteration_limit} (config: {config_path.name})")
     logger.info(f"max transforms: {args.max_transforms}")
 
-    assert benchmark.stock_name is not None
-    config = load_config(config_path, benchmark.stock_name, args.iteration_limit, args.max_transforms)
+    config = load_config(config_path, stock_name, args.iteration_limit, args.max_transforms)
     effective_config_path = write_effective_config(config, save_dir)
 
     results, solved_count, runtime = run_aizynthfinder_predictions(

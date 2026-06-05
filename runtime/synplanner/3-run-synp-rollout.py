@@ -20,6 +20,7 @@ from synplan.utils.loading import load_evaluation_function, load_reaction_rules
 from utils import (
     RAW_DIR,
     SYNPLANNER_DIR,
+    benchmark_stock_name,
     create_benchmark_parser,
     load_benchmark_and_stock,
     load_policy_from_config,
@@ -45,12 +46,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     benchmark, building_blocks, bench_path, stock_path = load_benchmark_and_stock(args.benchmark)
+    stock_name = benchmark_stock_name(benchmark)
+    assert stock_name is not None
 
     folder_name = f"synplanner-{PLANNER_VERSION}-mcts-rollout-iter{args.iteration_limit}"
     save_dir = RAW_DIR / folder_name / benchmark.name
     save_dir.mkdir(parents=True, exist_ok=True)
 
-    logger.info(f"stock: {benchmark.stock_name}")
+    logger.info(f"stock: {stock_name}")
     logger.info(f"iteration limit: {args.iteration_limit}")
 
     config_path = SYNPLANNER_DIR / "mcts-rollout-config.yaml"
@@ -62,7 +65,7 @@ if __name__ == "__main__":
     tree_config.search_strategy = "expansion_first"
     tree_config.evaluation_agg = config["node_evaluation"].get("evaluation_agg", tree_config.evaluation_agg)
     config["tree"] = tree_config.to_dict()
-    config["stock"] = {"name": benchmark.stock_name, "path": str(stock_path)}
+    config["stock"] = {"name": stock_name, "path": str(stock_path)}
 
     policy_function = load_policy_from_config(
         policy_params=config.get("node_expansion", {}),

@@ -1,24 +1,29 @@
 {
   "name": "smoke-random-n5-3",
   "description": "Three-target smoke benchmark sampled from random-n5-50.",
-  "stock_name": "n5-stock",
+  "default_constraints": [
+    {
+      "kind": "retrocast.stock_termination",
+      "stock": "n5-stock"
+    }
+  ],
   "targets": {
     "n5-01825": {
       "id": "n5-01825",
       "smiles": "O=c1[nH]cnc2cc(C(F)(F)F)cnc12",
-      "inchi_key": "KFNWLVBWRQCJNW-UHFFFAOYSA-N",
+      "inchikey": "KFNWLVBWRQCJNW-UHFFFAOYSA-N",
       "metadata": {}
     },
     "n5-00410": {
       "id": "n5-00410",
       "smiles": "COC(=O)Cc1ccccc1C#Cc1nc(SC)ncc1C(F)(F)F",
-      "inchi_key": "RKHOTVJYNJRSOF-UHFFFAOYSA-N",
+      "inchikey": "RKHOTVJYNJRSOF-UHFFFAOYSA-N",
       "metadata": {}
     },
     "n5-04507": {
       "id": "n5-04507",
       "smiles": "C#CCOc1cc(-c2ncc(C(F)(F)F)n(C)c2=O)c(F)cc1Cl",
-      "inchi_key": "PSCZEYWRSMJVAJ-UHFFFAOYSA-N",
+      "inchikey": "PSCZEYWRSMJVAJ-UHFFFAOYSA-N",
       "metadata": {}
     }
   }
