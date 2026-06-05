@@ -149,8 +149,11 @@ def run_aizynthfinder_predictions(
     if limit is not None:
         targets = targets[:limit]
 
+    stock_name = benchmark_stock_name(benchmark)
+    assert stock_name is not None
+
     finder = AiZynthFinder(configdict=config)
-    finder.stock.select(benchmark_stock_name(benchmark))
+    finder.stock.select(stock_name)
     finder.expansion_policy.select("uspto")
     finder.filter_policy.select("uspto")
 
