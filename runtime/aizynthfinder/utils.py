@@ -140,6 +140,7 @@ def run_aizynthfinder_predictions(
     benchmark: Benchmark,
     config: dict[str, Any],
     *,
+    expansion_policy_name: str = "uspto",
     limit: int | None,
 ) -> tuple[dict[str, dict[str, Any]], int, ExecutionStats]:
     results: dict[str, dict[str, Any]] = {}
@@ -154,7 +155,7 @@ def run_aizynthfinder_predictions(
 
     finder = AiZynthFinder(configdict=config)
     finder.stock.select(stock_name)
-    finder.expansion_policy.select("uspto")
+    finder.expansion_policy.select(expansion_policy_name)
     finder.filter_policy.select("uspto")
 
     with create_cli_progress(console=Console(), unit="target") as progress:

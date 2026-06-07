@@ -5,6 +5,12 @@ expansion:
   uspto:
     - data/retrocast/0-assets/model-configs/aizynthfinder/uspto_model.onnx
     - data/retrocast/0-assets/model-configs/aizynthfinder/uspto_templates.csv.gz
+  retrocast_v2026-06-05_reaction:
+    - data/retrocast/0-assets/model-configs/aizynthfinder/retrocast_v2026-06-05_ss_reaction-holdout-n1-n5_model.onnx
+    - data/retrocast/0-assets/model-configs/aizynthfinder/retrocast_v2026-06-05_ss_reaction-holdout-n1-n5_templates.csv.gz
+  retrocast_v2026-06-05_route:
+    - data/retrocast/0-assets/model-configs/aizynthfinder/retrocast_v2026-06-05_ss_route-holdout-n1-n5_model.onnx
+    - data/retrocast/0-assets/model-configs/aizynthfinder/retrocast_v2026-06-05_ss_route-holdout-n1-n5_templates.csv.gz
   ringbreaker:
     - data/retrocast/0-assets/model-configs/aizynthfinder/uspto_ringbreaker_model.onnx
     - data/retrocast/0-assets/model-configs/aizynthfinder/uspto_ringbreaker_templates.csv.gz

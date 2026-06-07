@@ -30,6 +30,22 @@ FILES_TO_DOWNLOAD = {
         "filename": "uspto_filter_model.onnx",
         "url": "https://zenodo.org/record/7797465/files/uspto_filter_model.onnx",
     },
+    "retrocast_v2026_06_05_reaction_policy_onnx": {
+        "filename": "retrocast_v2026-06-05_ss_reaction-holdout-n1-n5_model.onnx",
+        "url": "https://files.ischemist.com/assets/aizynthfinder/retrocast_v2026-06-05_ss_reaction-holdout-n1-n5_model.onnx",
+    },
+    "retrocast_v2026_06_05_reaction_templates": {
+        "filename": "retrocast_v2026-06-05_ss_reaction-holdout-n1-n5_templates.csv.gz",
+        "url": "https://files.ischemist.com/assets/aizynthfinder/retrocast_v2026-06-05_ss_reaction-holdout-n1-n5_templates.csv.gz",
+    },
+    "retrocast_v2026_06_05_route_policy_onnx": {
+        "filename": "retrocast_v2026-06-05_ss_route-holdout-n1-n5_model.onnx",
+        "url": "https://files.ischemist.com/assets/aizynthfinder/retrocast_v2026-06-05_ss_route-holdout-n1-n5_model.onnx",
+    },
+    "retrocast_v2026_06_05_route_templates": {
+        "filename": "retrocast_v2026-06-05_ss_route-holdout-n1-n5_templates.csv.gz",
+        "url": "https://files.ischemist.com/assets/aizynthfinder/retrocast_v2026-06-05_ss_route-holdout-n1-n5_templates.csv.gz",
+    },
     "retrostar_value_model": {
         "filename": "retrostar_value_model.pickle",
         "url": "https://github.com/MolecularAI/PaRoutes/blob/main/publication/retrostar_value_model.pickle?raw=true",
