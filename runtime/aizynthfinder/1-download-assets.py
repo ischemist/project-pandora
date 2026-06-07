@@ -38,6 +38,14 @@ FILES_TO_DOWNLOAD = {
         "filename": "retrocast_v2026-06-05_ss_reaction-holdout-n1-n5_templates.csv.gz",
         "url": "https://files.ischemist.com/assets/aizynthfinder/retrocast_v2026-06-05_ss_reaction-holdout-n1-n5_templates.csv.gz",
     },
+    "retrocast_v2026_06_05_reaction_plus_n5_policy_onnx": {
+        "filename": "retrocast_v2026-06-05_ss_reaction-holdout-plus-n5_model.onnx",
+        "url": "https://files.ischemist.com/assets/aizynthfinder/retrocast_v2026-06-05_ss_reaction-holdout-plus-n5_model.onnx",
+    },
+    "retrocast_v2026_06_05_reaction_plus_n5_templates": {
+        "filename": "retrocast_v2026-06-05_ss_reaction-holdout-plus-n5_templates.csv.gz",
+        "url": "https://files.ischemist.com/assets/aizynthfinder/retrocast_v2026-06-05_ss_reaction-holdout-plus-n5_templates.csv.gz",
+    },
     "retrocast_v2026_06_05_route_policy_onnx": {
         "filename": "retrocast_v2026-06-05_ss_route-holdout-n1-n5_model.onnx",
         "url": "https://files.ischemist.com/assets/aizynthfinder/retrocast_v2026-06-05_ss_route-holdout-n1-n5_model.onnx",

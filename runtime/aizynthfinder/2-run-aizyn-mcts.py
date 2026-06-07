@@ -4,7 +4,7 @@ Run AiZynthFinder MCTS retrosynthesis predictions on a batch of targets.
 Example usage:
     uv run --directory runtime/aizynthfinder 2-run-aizyn-mcts.py --benchmark random-n5-50 --limit 2
     uv run --directory runtime/aizynthfinder 2-run-aizyn-mcts.py \
-        --benchmark random-n5-50 --model v2026-06-05-route --iteration-limit 500 --max-transforms 10 --limit 2
+        --benchmark mkt-cnv-160 --model v2026-06-05-route --iteration-limit 100 --max-transforms 6
 
 Ubuntu runtime deps:
     sudo apt-get install -y libxrender1 libxext6 libsm6
@@ -31,6 +31,7 @@ PLANNER_VERSION = "4.4.1"
 MODEL_CONFIGS = {
     "aizyn": "uspto",
     "v2026-06-05-reaction": "retrocast_v2026-06-05_reaction",
+    "v2026-06-05-reaction-plus-n5": "retrocast_v2026-06-05_reaction_plus_n5",
     "v2026-06-05-route": "retrocast_v2026-06-05_route",
 }
 
