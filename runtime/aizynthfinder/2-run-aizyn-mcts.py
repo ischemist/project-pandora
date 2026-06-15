@@ -65,13 +65,19 @@ if __name__ == "__main__":
     logger.info(f"max transforms: {args.max_transforms}")
 
     config = load_config(config_path, stock_name, args.iteration_limit, args.max_transforms)
+    configured_policies = set(config.get("expansion", {}))
+    if expansion_policy_name not in configured_policies:
+        raise KeyError(
+            f"Expansion policy {expansion_policy_name!r} not found in {config_path}. "
+            f"Available policies: {sorted(configured_policies)}"
+        )
     effective_config_path = write_effective_config(config, save_dir)
 
     results, solved_count, runtime = run_aizynthfinder_predictions(
         benchmark=benchmark,
         config=config,
-        expansion_policy_name=expansion_policy_name,
         limit=args.limit,
+        expansion_policy_name=expansion_policy_name,
     )
     parameters = {
         "planner_version": PLANNER_VERSION,
