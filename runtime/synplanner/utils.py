@@ -186,7 +186,7 @@ def save_synplanner_results(
     effective_config_path: Path,
     config_template_path: Path,
     script_name: str,
-    benchmark: BenchmarkSet,
+    benchmark: Benchmark,
     planner_version: str,
     parameters: dict[str, Any] | None = None,
 ) -> None:
