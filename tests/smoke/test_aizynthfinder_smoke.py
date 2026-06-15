@@ -29,7 +29,7 @@ AIZYNTHFINDER_CASES = (
         name="aizynthfinder-mcts",
         runtime_dir=PROJECT_ROOT / "runtime" / "aizynthfinder",
         args=("2-run-aizyn-mcts.py", "--benchmark", "smoke-random-n5-3"),
-        output_dir=RAW / "aizynthfinder-4.4.1-mcts-iter100-depth6" / "smoke-random-n5-3",
+        output_dir=RAW / "aizynthfinder-4.4.1-mcts-aizyn-iter100-depth6" / "smoke-random-n5-3",
         required_paths=AIZYNTHFINDER_REQUIRED + (AIZYNTHFINDER_ASSETS / "config-mcts.yaml",),
         expected_adapter="aizynthfinder",
     ),

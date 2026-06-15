@@ -141,6 +141,7 @@ def run_aizynthfinder_predictions(
     config: dict[str, Any],
     *,
     limit: int | None,
+    expansion_policy_name: str = "uspto",
 ) -> tuple[dict[str, dict[str, Any]], int, ExecutionStats]:
     results: dict[str, dict[str, Any]] = {}
     solved_count = 0
@@ -154,7 +155,8 @@ def run_aizynthfinder_predictions(
 
     finder = AiZynthFinder(configdict=config)
     finder.stock.select(stock_name)
-    finder.expansion_policy.select("uspto")
+    finder.expansion_policy.select(expansion_policy_name)
+    # Keep the filter fixed so checkpoint comparisons isolate the expansion policy.
     finder.filter_policy.select("uspto")
 
     with create_cli_progress(console=Console(), unit="target") as progress:
