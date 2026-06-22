@@ -32,3 +32,6 @@ data/retrocast/5-results/
 data/retrocast/6-comparisons/
 data/retrocast-tests/
 .practices/
+
+data/ursa
+runtime/download-ursa-benchmarks.sh
