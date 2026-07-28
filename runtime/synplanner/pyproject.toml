@@ -13,4 +13,9 @@ dependencies = [
 # Require a short cooling-off window before newly uploaded artifacts are eligible.
 required-version = ">=0.9.17"
 exclude-newer = "7 days"
-exclude-newer-package = { retrocast = "2026-07-28T05:08:39Z" }
+exclude-newer-package = { gitpython = "2026-07-23T02:52:44Z", retrocast = "2026-07-28T05:08:39Z" }
+constraint-dependencies = [
+  "gitpython>=3.1.55",
+  "pygments>=2.20",
+  "torch>=2.13",
+]
