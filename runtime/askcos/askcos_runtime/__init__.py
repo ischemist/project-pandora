@@ -15,7 +15,7 @@ from typing import Any, Protocol
 import retrocast
 import yaml
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DATA_DIR = Path(os.environ.get("RETROCAST_DATA_DIR", PROJECT_ROOT / "data" / "retrocast"))
 TASKS_DIR = DATA_DIR / "1-benchmarks" / "definitions"
 RAW_DIR = DATA_DIR / "2-raw"
@@ -72,6 +72,17 @@ def positive_int(value: str) -> int:
     return parsed
 
 
+def resolve_path_within_root(value: str, root: Path) -> Path:
+    resolved_root = root.resolve()
+    path = Path(value)
+    candidate = (path if path.is_absolute() else resolved_root / path).resolve()
+    try:
+        candidate.relative_to(resolved_root)
+    except ValueError as error:
+        raise ValueError(f"path must be inside {resolved_root}") from error
+    return candidate
+
+
 def task_path(task_name: str) -> Path:
     return TASKS_DIR / f"{task_name}.json.gz"
 
@@ -119,10 +130,10 @@ def write_run_artifacts(
     retrocast.write_json_gz(dict(results), results_path)
     retrocast.write_execution_stats(execution_stats, execution_stats_path)
 
-    successful_requests = sum(result is not None for result in results.values())
+    successful_requests, failed_requests = request_counts(results)
     statistics = {
         "successful_requests": successful_requests,
-        "failed_requests": len(results) - successful_requests,
+        "failed_requests": failed_requests,
         "total_targets": len(results),
         "task_total_targets": len(task["targets"]),
     }
@@ -140,6 +151,11 @@ def write_run_artifacts(
     if not report["is_valid"]:
         raise RuntimeError(f"ASKCOS planner manifest failed verification: {report['issues']}")
     return manifest
+
+
+def request_counts(results: Mapping[str, Any]) -> tuple[int, int]:
+    successful_requests = sum(result is not None for result in results.values())
+    return successful_requests, len(results) - successful_requests
 
 
 def normalize_target_id(target_id: str) -> str:
@@ -184,11 +200,31 @@ def gather_results(
     if not eval_dir.is_dir():
         raise OSError(f"ASKCOS evaluation directory does not exist: {eval_dir}")
 
+    matches: list[tuple[str, Path | None]] = []
+    for position, (target_id, _target) in enumerate(task["targets"].items(), start=1):
+        result_path = find_result_file(position, target_id, eval_dir)
+        matches.append((target_id, result_path))
+
+    target_ids_by_result: dict[Path, list[str]] = {}
+    for target_id, result_path in matches:
+        if result_path is not None:
+            target_ids_by_result.setdefault(result_path.resolve(), []).append(target_id)
+    collisions = {
+        result_path: target_ids
+        for result_path, target_ids in target_ids_by_result.items()
+        if len(target_ids) > 1
+    }
+    if collisions:
+        details = "; ".join(
+            f"{result_path.name}: {', '.join(repr(target_id) for target_id in target_ids)}"
+            for result_path, target_ids in sorted(collisions.items())
+        )
+        raise ValueError(f"ASKCOS result files match multiple task targets: {details}")
+
     results: dict[str, Any] = {}
     sources: list[Path] = []
     missing: list[str] = []
-    for position, (target_id, _target) in enumerate(task["targets"].items(), start=1):
-        result_path = find_result_file(position, target_id, eval_dir)
+    for target_id, result_path in matches:
         if result_path is None:
             missing.append(target_id)
             continue
@@ -230,7 +266,7 @@ def write_gathered_artifacts(
         DATA_DIR,
         parameters={
             "gather_mode": "position-then-target-name",
-            "input_directory": str(eval_dir.relative_to(DATA_DIR)),
+            "input_directory": str(eval_dir.relative_to(DATA_DIR.resolve())),
         },
         statistics={
             "gathered_targets": len(results),

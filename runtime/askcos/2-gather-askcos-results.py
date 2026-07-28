@@ -12,18 +12,16 @@ from askcos_runtime import (
     gather_results,
     load_task,
     logger,
+    resolve_path_within_root,
     write_gathered_artifacts,
 )
 
 
 def path_within_data_root(value: str) -> Path:
-    path = Path(value)
-    path = path if path.is_absolute() else DATA_DIR / path
     try:
-        path.relative_to(DATA_DIR)
+        return resolve_path_within_root(value, DATA_DIR)
     except ValueError as error:
-        raise argparse.ArgumentTypeError(f"path must be inside {DATA_DIR}") from error
-    return path
+        raise argparse.ArgumentTypeError(str(error)) from error
 
 
 def main() -> None:

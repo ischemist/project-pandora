@@ -12,6 +12,8 @@ from askcos_runtime import (
     effective_stock_name,
     find_result_file,
     gather_results,
+    request_counts,
+    resolve_path_within_root,
     write_effective_config,
     write_run_artifacts,
 )
@@ -40,6 +42,30 @@ def test_execution_timer_records_both_clocks() -> None:
     assert timer.wall_time["target-1"] >= 0
     assert timer.cpu_time["target-1"] >= 0
     assert timer.to_dict() == {"wall_time": timer.wall_time, "cpu_time": timer.cpu_time}
+
+
+def test_project_root_points_to_repository_root() -> None:
+    expected_project_root = Path(__file__).resolve().parents[3]
+    assert expected_project_root == askcos_runtime.PROJECT_ROOT
+
+
+def test_resolve_path_within_root_rejects_parent_and_symlink_escapes(tmp_path: Path) -> None:
+    data_root = tmp_path / "data"
+    data_root.mkdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (data_root / "escape").symlink_to(outside, target_is_directory=True)
+
+    inside = resolve_path_within_root("results/output", data_root)
+    assert inside == (data_root / "results" / "output").resolve()
+    with pytest.raises(ValueError, match="path must be inside"):
+        resolve_path_within_root("../outside", data_root)
+    with pytest.raises(ValueError, match="path must be inside"):
+        resolve_path_within_root("escape/output", data_root)
+
+
+def test_request_counts_separates_successes_and_failures() -> None:
+    assert request_counts({"first": {"result": []}, "second": None}) == (1, 1)
 
 
 def test_effective_stock_name_uses_retrocast_override_semantics() -> None:
@@ -79,6 +105,25 @@ def test_gather_results_preserves_objects_and_reports_invalid_files(tmp_path: Pa
     assert results == {"first": {"results": {"one": 1}}}
     assert sources == [tmp_path / "0001_first.json", tmp_path / "0002_second.json"]
     assert missing == ["second", "third"]
+
+
+@pytest.mark.parametrize(
+    ("first_target", "second_target", "filename"),
+    [
+        ("target_1", "other_target_1", "_other_target_1.json"),
+        ("target/1", "target_1", "_target_1.json"),
+    ],
+)
+def test_gather_results_rejects_files_matching_multiple_targets(
+    tmp_path: Path,
+    first_target: str,
+    second_target: str,
+    filename: str,
+) -> None:
+    (tmp_path / filename).write_text("{}", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="match multiple task targets"):
+        gather_results(task(first_target, second_target), tmp_path)
 
 
 def test_write_run_artifacts_creates_verified_planner_manifest(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

@@ -20,3 +20,5 @@ sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin make python3 python3-pip
 sudo apt install -y python-is-python3
 sudo usermod -aG docker "$USER"
+printf '%s\n' "Docker group membership requires a new login session." \
+    "Log out and log back in before running Docker commands without sudo."

@@ -18,11 +18,12 @@ from askcos_runtime import (
     load_task,
     logger,
     positive_int,
+    request_counts,
     write_effective_config,
     write_run_artifacts,
 )
 
-DEFAULT_ASKCOS_URL = "http://0.0.0.0:9321/get_buyable_paths"
+DEFAULT_ASKCOS_URL = "http://localhost:9321/get_buyable_paths"
 
 
 def call_askcos_api(
@@ -114,7 +115,13 @@ def run(
         effective_config_path=effective_config_path,
         parameters=parameters,
     )
-    logger.info("Saved %d ASKCOS responses to %s", len(results), save_dir)
+    successful_requests, failed_requests = request_counts(results)
+    logger.info(
+        "Saved %d successful ASKCOS responses (%d failed requests) to %s",
+        successful_requests,
+        failed_requests,
+        save_dir,
+    )
     return save_dir
 
 
