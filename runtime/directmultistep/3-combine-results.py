@@ -35,6 +35,11 @@ def main() -> None:
     part_names = [f"{args.benchmark}-{part}" for part in args.parts]
     part_dirs = [RAW_DIR / args.run_name / part_name for part_name in part_names]
     output_dir = RAW_DIR / args.run_name / task["name"]
+
+    results, execution_stats, part_sources = gather_dms_parts(
+        part_dirs=part_dirs,
+        expected_target_ids=set(task["targets"]),
+    )
     effective_config_path = write_effective_config(
         {
             "collision_policy": "reject",
@@ -43,11 +48,6 @@ def main() -> None:
             "source_run_name": args.run_name,
         },
         output_dir,
-    )
-
-    results, execution_stats, part_sources = gather_dms_parts(
-        part_dirs=part_dirs,
-        expected_target_ids=set(task["targets"]),
     )
     statistics = {
         "parts_combined": len(part_dirs),

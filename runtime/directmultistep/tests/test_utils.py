@@ -15,13 +15,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import utils  # noqa: E402
 
 
-def _load_runner():
-    path = Path(__file__).resolve().parents[1] / "2-run-dms.py"
-    spec = importlib.util.spec_from_file_location("pandora_dms_runner", path)
+def _load_script(filename: str, module_name: str):
+    path = Path(__file__).resolve().parents[1] / filename
+    spec = importlib.util.spec_from_file_location(module_name, path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def _load_runner():
+    return _load_script("2-run-dms.py", "pandora_dms_runner")
+
+
+def _load_combiner():
+    return _load_script("3-combine-results.py", "pandora_dms_combiner")
 
 
 def test_parse_route_strings_rejects_non_object() -> None:
@@ -118,6 +126,41 @@ def test_gather_dms_parts_rejects_duplicate_targets(monkeypatch: pytest.MonkeyPa
 
     with pytest.raises(ValueError, match="duplicate target IDs"):
         utils.gather_dms_parts(part_dirs=[first, second], expected_target_ids={"duplicate"})
+
+
+def test_failed_gather_preserves_existing_effective_config(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    combiner = _load_combiner()
+    raw_dir = tmp_path / "2-raw"
+    output_dir = raw_dir / "dms-wide" / "tiny"
+    output_dir.mkdir(parents=True)
+    effective_config_path = output_dir / "config.effective.yaml"
+    original_config = "source_run_name: successful-run\n"
+    effective_config_path.write_text(original_config, encoding="utf-8")
+
+    monkeypatch.setattr(combiner, "RAW_DIR", raw_dir)
+    monkeypatch.setattr(
+        combiner,
+        "load_dms_task",
+        lambda _benchmark: ({"name": "tiny", "targets": {"target": {}}}, tmp_path / "tiny.json"),
+    )
+
+    def reject_parts(**_kwargs):
+        raise ValueError("invalid part manifest")
+
+    monkeypatch.setattr(combiner, "gather_dms_parts", reject_parts)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["3-combine-results.py", "--run-name", "dms-wide", "--benchmark", "tiny", "--parts", "pt1"],
+    )
+
+    with pytest.raises(ValueError, match="invalid part manifest"):
+        combiner.main()
+
+    assert effective_config_path.read_text(encoding="utf-8") == original_config
 
 
 def test_write_planner_artifacts_round_trips(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
