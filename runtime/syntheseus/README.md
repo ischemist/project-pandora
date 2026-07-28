@@ -1,8 +1,14 @@
 # Syntheseus runtime
 
 This environment runs Syntheseus 0.7.2 with LocalRetro on Linux x86-64. DGL and
-torch-scatter are pinned to their upstream PyTorch 2.1 wheels because PyPI does
-not publish a usable DGL 2.2.1 Linux wheel.
+torch-scatter are pinned to their upstream PyTorch 2.6 wheels because their
+compiled extensions must match the runtime's PyTorch release. DGL 2.5 is the
+newest upstream build published for that PyTorch line, and PyTorch 2.6 is the
+newest DGL wheel index published for this platform. Advancing PyTorch further
+requires a matching upstream GraphBolt build.
+
+DistDGL is unsupported in this runtime; model initialization replaces its
+pickle-based RPC deserializer with a fail-closed error.
 
 Pandora owns the conversion from Syntheseus runtime objects to the raw
 `syntheseus` adapter tree. `TemplateAwareLocalRetroModel` mirrors the upstream

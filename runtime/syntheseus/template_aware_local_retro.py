@@ -2,12 +2,28 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Never
 
 from syntheseus.interface.molecule import Molecule
 from syntheseus.interface.reaction import SingleProductReaction
 from syntheseus.reaction_prediction.inference import LocalRetroModel
 from syntheseus.reaction_prediction.utils.inference import process_raw_smiles_outputs_backwards
+
+_DISTDGL_DISABLED_MESSAGE = (
+    "DistDGL RPC deserialization is disabled in Pandora's LocalRetro runtime because it accepts pickle payloads"
+)
+
+
+def _reject_distdgl_rpc_payload(*_: Any, **__: Any) -> Never:
+    raise RuntimeError(_DISTDGL_DISABLED_MESSAGE)
+
+
+def _disable_distdgl_rpc_deserialization() -> None:
+    """Make the unused DistDGL RPC path fail closed before LocalRetro initializes."""
+    from dgl.distributed import rpc
+
+    if rpc.deserialize_from_payload is not _reject_distdgl_rpc_payload:
+        rpc.deserialize_from_payload = _reject_distdgl_rpc_payload
 
 
 def _decode_predictions(
@@ -63,6 +79,10 @@ def _decode_predictions(
 
 class TemplateAwareLocalRetroModel(LocalRetroModel):
     """LocalRetro model preserving its chosen reaction SMARTS on each prediction."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        _disable_distdgl_rpc_deserialization()
+        super().__init__(*args, **kwargs)
 
     def _build_batch_predictions(
         self,
