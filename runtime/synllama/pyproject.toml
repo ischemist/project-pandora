@@ -20,10 +20,7 @@ dev = [
 [tool.uv]
 required-version = ">=0.9.17"
 exclude-newer = "7 days"
-
-[tool.uv.sources]
-# Remove this source override once RetroCast 0.8.2 is published.
-retrocast = { git = "https://github.com/ischemist/project-procrustes.git", rev = "969f59dd7a849af8341bae91e6d8765925b89bc5b" }
+exclude-newer-package = { retrocast = "2026-07-28T05:08:39Z" }
 
 [tool.hatch.build.targets.wheel]
 packages = ["synllama_runtime"]
