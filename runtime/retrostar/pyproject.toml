@@ -1,0 +1,26 @@
+[project]
+name = "retrostar-wrapper"
+version = "0.1.0"
+description = "Isolated Pandora runtime for the original Retro* planner"
+readme = "README.md"
+requires-python = ">=3.11, <3.12"
+dependencies = [
+    "graphviz>=0.20.3",
+    "networkx>=3.4.2",
+    "numpy>=1.26.4,<2",
+    "pandas>=2.2.3",
+    "rdkit>=2024.9.6",
+    "requests>=2.32.3",
+    "retro-star",
+    "retrocast==0.8.2",
+    "torch>=2.6",
+    "tqdm>=4.67.1",
+]
+
+[tool.uv]
+required-version = ">=0.9.17"
+exclude-newer = "7 days"
+exclude-newer-package = { retrocast = "2026-07-28T05:08:39Z" }
+
+[tool.uv.sources]
+retro-star = { git = "https://github.com/anmorgunov/retro_star.git", rev = "f392fdc920d12d325ef61b8622a8795ff06fa49f" }

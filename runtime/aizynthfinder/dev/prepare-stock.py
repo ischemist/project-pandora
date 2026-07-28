@@ -1,4 +1,8 @@
-"""Convert plain SMILES stock files to AiZynthFinder HDF5 stock files. Note: RetroCast already ships hdf5 stock files when you request stock for any benchmark, so you most likely don't need to run this script."""
+"""Convert plain SMILES stock files to AiZynthFinder HDF5 stock files.
+
+RetroCast already ships HDF5 stock files when you request stock for a benchmark,
+so this script is normally only needed for a new stock.
+"""
 
 import argparse
 from pathlib import Path

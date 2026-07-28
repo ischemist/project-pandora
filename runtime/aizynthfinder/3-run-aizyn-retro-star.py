@@ -10,14 +10,15 @@ Ubuntu runtime deps:
     sudo apt-get install -y libxrender1 libxext6 libsm6
 """
 
-from retrocast.utils.logging import configure_script_logging, logger
 from utils import (
     AIZYNTHFINDER_DIR,
     RAW_DIR,
     benchmark_stock_name,
+    configure_script_logging,
     create_benchmark_parser,
     load_aizynthfinder_benchmark,
     load_config,
+    logger,
     quiet_aizynthfinder_debug_logs,
     run_aizynthfinder_predictions,
     save_aizynthfinder_results,
@@ -36,16 +37,14 @@ if __name__ == "__main__":
     benchmark, bench_path = load_aizynthfinder_benchmark(args.benchmark)
 
     folder_name = f"aizynthfinder-{PLANNER_VERSION}-retro-star-iter{args.iteration_limit}-depth{args.max_transforms}"
-    save_dir = RAW_DIR / folder_name / benchmark.name
+    save_dir = RAW_DIR / folder_name / benchmark["name"]
     save_dir.mkdir(parents=True, exist_ok=True)
 
     config_path = AIZYNTHFINDER_DIR / "config-retrostar.yaml"
     stock_name = benchmark_stock_name(benchmark)
-    assert stock_name is not None
-
-    logger.info(f"stock: {stock_name}")
-    logger.info(f"iteration limit: {args.iteration_limit} (config: {config_path.name})")
-    logger.info(f"max transforms: {args.max_transforms}")
+    logger.info("stock: %s", stock_name)
+    logger.info("iteration limit: %s (config: %s)", args.iteration_limit, config_path.name)
+    logger.info("max transforms: %s", args.max_transforms)
 
     config = load_config(config_path, stock_name, args.iteration_limit, args.max_transforms)
     effective_config_path = write_effective_config(config, save_dir)
