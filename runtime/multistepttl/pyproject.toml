@@ -1,0 +1,41 @@
+[project]
+name = "multistepttl-wrapper"
+version = "0.1.0"
+description = "Isolated MultiStepTTL pickle serializer for RetroCast tasks"
+requires-python = ">=3.11, <3.13"
+dependencies = [
+    "pandas>=2.1,<2.2",
+    "retrocast==0.8.2",
+]
+
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.15.12",
+]
+
+[tool.uv]
+required-version = ">=0.9.17"
+exclude-newer = "7 days"
+
+[tool.uv.sources]
+# Remove this source override once RetroCast 0.8.2 is published.
+retrocast = { git = "https://github.com/ischemist/project-procrustes.git", rev = "969f59dd7a849af8341bae91e6d8765925b89bc5b" }
+
+[tool.hatch.build.targets.wheel]
+packages = ["multistepttl_runtime"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore:numpy.core.numeric is deprecated:DeprecationWarning"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
