@@ -98,11 +98,17 @@ def run_runtime_smoke(case: RuntimeSmokeCase) -> None:
 
     assert len(results) == case.expected_targets
     assert manifest["statistics"]["total_targets"] == case.expected_targets
-    assert manifest["parameters"]["effective_config_path"].startswith("2-raw/")
+    effective_config_value = manifest["parameters"]["effective_config_path"]
+    assert isinstance(effective_config_value, str)
+    effective_config_relative = Path(effective_config_value)
+    assert not effective_config_relative.is_absolute()
+    assert effective_config_relative.parts and effective_config_relative.parts[0] == "2-raw"
+    effective_config_path = (DATA_DIR / effective_config_relative).resolve()
+    assert effective_config_path.is_relative_to(DATA_DIR.resolve())
+    assert effective_config_path.exists()
     assert "adapter" not in manifest["parameters"]
     assert "raw_results_filename" not in manifest["parameters"]
     assert manifest["directives"]["adapter"] == case.expected_adapter
     assert manifest["directives"]["raw_results_filename"] == "results.json.gz"
-    assert any((case.output_dir / filename).exists() for filename in ("config.effective.yaml", "config.effective.json"))
     if "benchmark_total_targets" in manifest["statistics"]:
         assert manifest["statistics"]["benchmark_total_targets"] == 3
