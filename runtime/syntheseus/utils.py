@@ -46,12 +46,12 @@ class ExecutionTimer:
     @contextmanager
     def measure(self, target_id: str) -> Iterator[None]:
         wall_start = time.perf_counter()
-        cpu_start = time.thread_time()
+        cpu_start = time.process_time()
         try:
             yield
         finally:
             self.wall_time[target_id] = time.perf_counter() - wall_start
-            self.cpu_time[target_id] = time.thread_time() - cpu_start
+            self.cpu_time[target_id] = time.process_time() - cpu_start
 
     def to_dict(self) -> ExecutionStats:
         return {"wall_time": self.wall_time, "cpu_time": self.cpu_time}
