@@ -1,10 +1,16 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-mkdir -p data/retrocast/0-assets/model-configs/dms/checkpoints
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+DATA_DIR="${RETROCAST_DATA_DIR:-${PROJECT_ROOT}/data/retrocast}"
+CHECKPOINT_DIR="${DATA_DIR}/0-assets/model-configs/dms/checkpoints"
+
+mkdir -p "${CHECKPOINT_DIR}"
 
 # Define URLs
 CKPT_URL="https://files.batistalab.com/DirectMultiStep/ckpts"
-DATASET_URL="https://files.batistalab.com/DirectMultiStep/datasets"
 
 # Model checkpoint configurations
 model_names=(
@@ -29,7 +35,7 @@ case "$all_choice" in
             info="${model_info[$i]}"
             IFS="|" read -r filename size <<< "$info"
             echo "Downloading ${model} model ckpt (${size} MB)..."
-            curl -o "data/retrocast/0-assets/model-configs/dms/checkpoints/${filename}" "${CKPT_URL}/${filename}"
+            curl --fail --location --output "${CHECKPOINT_DIR}/${filename}" "${CKPT_URL}/${filename}"
         done
         ;;
     * )
@@ -40,7 +46,7 @@ case "$all_choice" in
             read -p "Do you want to download ${model} model ckpt? (${size} MB) [y/N]: " choice
             case "$choice" in
                 y|Y )
-                    curl -o "data/retrocast/0-assets/model-configs/dms/checkpoints/${filename}" "${CKPT_URL}/${filename}"
+                    curl --fail --location --output "${CHECKPOINT_DIR}/${filename}" "${CKPT_URL}/${filename}"
                     ;;
                 * )
                     echo "Skipping ${model} ckpt."
