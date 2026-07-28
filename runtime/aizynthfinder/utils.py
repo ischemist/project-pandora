@@ -285,6 +285,7 @@ def save_aizynthfinder_results(
     benchmark: Task,
     parameters: dict[str, Any],
     solved_count: int,
+    additional_sources: list[Path] | None = None,
 ) -> None:
     summary = {
         "solved_count": solved_count,
@@ -305,7 +306,7 @@ def save_aizynthfinder_results(
         action=script_name,
         adapter="aizynthfinder",
         raw_results_path=results_path,
-        sources=[bench_path, effective_config_path],
+        sources=[bench_path, effective_config_path, *(additional_sources or [])],
         root_dir=DATA_DIR,
         parameters=manifest_parameters,
         statistics=summary,

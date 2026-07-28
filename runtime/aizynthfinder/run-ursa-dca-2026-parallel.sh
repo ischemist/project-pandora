@@ -55,4 +55,16 @@ for index in "${!pids[@]}"; do
   fi
 done
 
+if [[ "$status" -eq 0 ]]; then
+  "$python_bin" "$script_dir/4-combine-shards.py" \
+    --benchmark "$benchmark" \
+    --run-name "aizynthfinder-4.4.1-mcts-aizyn-iter${iteration_limit}-depth${max_transforms}" \
+    --shard-count "$shard_count"
+
+  "$python_bin" "$script_dir/4-combine-shards.py" \
+    --benchmark "$benchmark" \
+    --run-name "aizynthfinder-4.4.1-retro-star-iter${iteration_limit}-depth${max_transforms}" \
+    --shard-count "$shard_count"
+fi
+
 exit "$status"
