@@ -7,6 +7,7 @@ dependencies = [
   "faiss-cpu",
   "numpy<2",
   "pandas<2.2",
+  "pydantic",
   "pyyaml",
   "retrocast==0.8.2",
   "syntheseus[local-retro]==0.7.2",
