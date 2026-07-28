@@ -11,3 +11,6 @@ dependencies = [
 required-version = ">=0.9.17"
 exclude-newer = "7 days"
 exclude-newer-package = { retrocast = "2026-07-28T05:08:39Z" }
+# reaction-utils 1.9.3 declares urllib3<2 even though it does not import
+# urllib3. Its other consumers (requests and botocore) support urllib3 2.x.
+override-dependencies = ["urllib3>=2.7"]
