@@ -8,7 +8,7 @@ dependencies = [
   "numpy<2",
   "pandas<2.2",
   "pyyaml",
-  "retrocast",
+  "retrocast==0.8.2",
   "syntheseus[local-retro]==0.7.2",
   "torch<=2.1",
   "torch-scatter",
@@ -19,11 +19,11 @@ dependencies = [
 dev = ["pytest"]
 
 [tool.uv.sources]
-retrocast = { git = "https://github.com/ischemist/project-procrustes", rev = "969f59dd7a849af8341bae91e6d8765925b89bc5b" }
 dgl = { url = "https://data.dgl.ai/wheels/torch-2.1/dgl-2.2.1-cp311-cp311-manylinux1_x86_64.whl" }
 torch-scatter = { url = "https://data.pyg.org/whl/torch-2.1.0%2Bcpu/torch_scatter-2.1.2%2Bpt21cpu-cp311-cp311-linux_x86_64.whl" }
 
 [tool.uv]
 required-version = ">=0.9.17"
 exclude-newer = "7 days"
+exclude-newer-package = { retrocast = "2026-07-28T05:08:39Z" }
 environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
