@@ -12,6 +12,7 @@ from multistepttl_runtime import (
     RAW_DIR,
     configure_logging,
     logger,
+    resolve_data_path,
     serialize_task,
     task_path,
     write_artifacts,
@@ -19,13 +20,10 @@ from multistepttl_runtime import (
 
 
 def path_within_data_root(value: str) -> Path:
-    path = Path(value)
-    path = path if path.is_absolute() else DATA_DIR / path
     try:
-        path.relative_to(DATA_DIR)
+        return resolve_data_path(Path(value))
     except ValueError as error:
         raise argparse.ArgumentTypeError(f"path must be inside {DATA_DIR}") from error
-    return path
 
 
 def main() -> None:
@@ -43,10 +41,13 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    source_path = task_path(args.task_name)
+    try:
+        source_path = resolve_data_path(task_path(args.task_name))
+    except ValueError as error:
+        parser.error(str(error))
     task = retrocast.load_task(source_path)
-    output_dir = args.output_dir or RAW_DIR / "multistepttl" / task["name"]
-    input_dir = args.input_dir or output_dir
+    output_dir = resolve_data_path(args.output_dir or RAW_DIR / "multistepttl" / task["name"])
+    input_dir = resolve_data_path(args.input_dir or output_dir)
 
     serialized = serialize_task(task, input_dir)
     write_artifacts(

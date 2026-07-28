@@ -45,6 +45,18 @@ def task_path(task_name: str) -> Path:
     return TASKS_DIR / f"{task_name}.json.gz"
 
 
+def resolve_data_path(path: Path) -> Path:
+    """Resolve a path and require its canonical location to stay inside the data root."""
+    data_root = DATA_DIR.resolve()
+    candidate = path if path.is_absolute() else DATA_DIR / path
+    candidate = candidate.resolve()
+    try:
+        candidate.relative_to(data_root)
+    except ValueError as error:
+        raise ValueError(f"path must be inside data root {data_root}: {candidate}") from error
+    return candidate
+
+
 def _advanced_scores(tree: pd.DataFrame, predictions: pd.DataFrame) -> pd.DataFrame:
     scores: list[float] = []
     for route in tree["Route"]:
@@ -53,9 +65,7 @@ def _advanced_scores(tree: pd.DataFrame, predictions: pd.DataFrame) -> pd.DataFr
             for reaction_id in route:
                 product *= predictions.loc[reaction_id, "Prob_Forward_Prediction_1"]
         except KeyError as error:
-            raise MultiStepTTLSerializationError(
-                f"reaction id {error} from route not found in predictions"
-            ) from error
+            raise MultiStepTTLSerializationError(f"reaction id {error} from route not found in predictions") from error
         scores.append(product)
     tree["fwd_conf_score"] = scores
     return tree
@@ -158,9 +168,7 @@ def serialize_task(task: Mapping[str, Any], input_dir: Path) -> SerializedTask:
             logger.warning("Ignoring MultiStepTTL directory for unknown target %s", target_id)
             continue
         discovered_targets += 1
-        candidate_sources = sorted(
-            [*target_dir.glob("*__tree.pkl"), *target_dir.glob("*__prediction.pkl")]
-        )
+        candidate_sources = sorted([*target_dir.glob("*__tree.pkl"), *target_dir.glob("*__prediction.pkl")])
         try:
             serialized = serialize_target_directory(target_dir)
             if serialized is None:
@@ -194,6 +202,9 @@ def write_artifacts(
     input_dir: Path,
     output_dir: Path,
 ) -> dict[str, Any]:
+    task_source = resolve_data_path(task_source)
+    input_dir = resolve_data_path(input_dir)
+    output_dir = resolve_data_path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     results_path = output_dir / "results.json.gz"
     manifest_path = output_dir / "manifest.json"

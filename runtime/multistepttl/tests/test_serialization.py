@@ -10,6 +10,7 @@ import multistepttl_runtime
 from multistepttl_runtime import (
     MultiStepTTLSerializationError,
     discover_pickle_pair,
+    resolve_data_path,
     serialize_target,
     serialize_target_directory,
     serialize_task,
@@ -131,6 +132,45 @@ def test_task_serialization_isolates_target_failures(tmp_path: Path) -> None:
 def test_uspto_directory_name_uses_legacy_target_mapping() -> None:
     assert target_id_from_directory("USPTO_190_001") == "USPTO/190/001"
     assert target_id_from_directory("another_target") == "another_target"
+
+
+def test_resolve_data_path_returns_canonical_contained_path(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    data_dir = tmp_path / "retrocast"
+    contained = data_dir / "staging"
+    contained.mkdir(parents=True)
+    monkeypatch.setattr(multistepttl_runtime, "DATA_DIR", data_dir)
+
+    assert resolve_data_path(Path("nested") / ".." / "staging") == contained.resolve()
+
+
+def test_resolve_data_path_rejects_parent_traversal(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    data_dir = tmp_path / "retrocast"
+    data_dir.mkdir()
+    monkeypatch.setattr(multistepttl_runtime, "DATA_DIR", data_dir)
+
+    with pytest.raises(ValueError, match="must be inside data root"):
+        resolve_data_path(Path("..") / "outside")
+
+
+def test_resolve_data_path_rejects_outward_symlink(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    data_dir = tmp_path / "retrocast"
+    outside = tmp_path / "outside"
+    data_dir.mkdir()
+    outside.mkdir()
+    (data_dir / "escape").symlink_to(outside, target_is_directory=True)
+    monkeypatch.setattr(multistepttl_runtime, "DATA_DIR", data_dir)
+
+    with pytest.raises(ValueError, match="must be inside data root"):
+        resolve_data_path(data_dir / "escape" / "results")
 
 
 def test_task_serialization_and_manifest_lifecycle(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
