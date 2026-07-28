@@ -5,26 +5,72 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 import yaml
 from aizynthfinder.aizynthfinder import AiZynthFinder
-from retrocast.cli.progress import create_cli_progress
-from retrocast.io import create_manifest, load_benchmark, save_execution_stats, save_json_gz
-from retrocast.models.task import STOCK_TERMINATION, Benchmark, StockTerminationConstraint
-from retrocast.utils import ExecutionTimer
-from retrocast.utils.logging import logger
-from retrocast.utils.timing import ExecutionStats
+from retrocast import (
+    create_planner_manifest,
+    load_task,
+    resolve_stock_bindings,
+    verify_planner_manifest,
+    write_execution_stats,
+    write_json,
+    write_json_gz,
+)
 from rich.console import Console
+from rich.progress import BarColumn, MofNCompleteColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = Path(os.environ.get("RETROCAST_DATA_DIR", PROJECT_ROOT / "data" / "retrocast"))
 AIZYNTHFINDER_DIR = DATA_DIR / "0-assets" / "model-configs" / "aizynthfinder"
 BENCHMARKS_DIR = DATA_DIR / "1-benchmarks" / "definitions"
 RAW_DIR = DATA_DIR / "2-raw"
+logger = logging.getLogger("pandora.aizynthfinder")
+
+Task = dict[str, Any]
+ExecutionStats = dict[str, dict[str, float]]
+
+
+def configure_script_logging() -> None:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+
+
+class ExecutionTimer:
+    def __init__(self) -> None:
+        self.wall_time: dict[str, float] = {}
+        self.cpu_time: dict[str, float] = {}
+
+    @contextmanager
+    def measure(self, target_id: str) -> Iterator[None]:
+        wall_start = time.perf_counter()
+        cpu_start = time.process_time()
+        try:
+            yield
+        finally:
+            self.wall_time[target_id] = time.perf_counter() - wall_start
+            self.cpu_time[target_id] = time.process_time() - cpu_start
+
+    def to_dict(self) -> ExecutionStats:
+        return {"wall_time": self.wall_time, "cpu_time": self.cpu_time}
+
+
+@contextmanager
+def create_cli_progress(*, console: Console, unit: str) -> Iterator[Progress]:
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        TextColumn(unit),
+        TimeElapsedColumn(),
+        console=console,
+    ) as progress:
+        yield progress
 
 
 def positive_int(value: str) -> int:
@@ -67,18 +113,22 @@ def create_benchmark_parser(description: str) -> argparse.ArgumentParser:
 
 def load_aizynthfinder_benchmark(
     benchmark_name: str,
-) -> tuple[Benchmark, Path]:
+) -> tuple[Task, Path]:
     bench_path = BENCHMARKS_DIR / f"{benchmark_name}.json.gz"
-    benchmark = load_benchmark(bench_path)
-    assert benchmark_stock_name(benchmark) is not None, f"Stock name not found in benchmark {benchmark_name}"
+    benchmark = load_task(bench_path)
+    benchmark_stock_name(benchmark)
     return benchmark, bench_path
 
 
-def benchmark_stock_name(benchmark: Benchmark) -> str | None:
-    for constraint in benchmark.default_constraints:
-        if constraint.kind == STOCK_TERMINATION:
-            return cast(StockTerminationConstraint, constraint).stock
-    return None
+def benchmark_stock_name(benchmark: Task) -> str:
+    bindings = resolve_stock_bindings(benchmark)
+    stock_names = set(bindings.values())
+    if None in stock_names:
+        missing = sorted(target_id for target_id, stock_name in bindings.items() if stock_name is None)
+        raise ValueError(f"Targets have no effective stock binding: {missing}")
+    if len(stock_names) != 1:
+        raise ValueError(f"AiZynthFinder runtime requires one effective stock, got {sorted(stock_names)}")
+    return next(iter(stock_names))
 
 
 def load_config(config_path: Path, stock_name: str, iteration_limit: int, max_transforms: int) -> dict[str, Any]:
@@ -137,7 +187,7 @@ def quiet_progress_info_logs() -> Iterator[None]:
 
 
 def run_aizynthfinder_predictions(
-    benchmark: Benchmark,
+    benchmark: Task,
     config: dict[str, Any],
     *,
     limit: int | None,
@@ -146,13 +196,11 @@ def run_aizynthfinder_predictions(
     results: dict[str, dict[str, Any]] = {}
     solved_count = 0
     timer = ExecutionTimer()
-    targets = list(benchmark.targets.values())
+    targets = list(benchmark["targets"].values())
     if limit is not None:
         targets = targets[:limit]
 
     stock_name = benchmark_stock_name(benchmark)
-    assert stock_name is not None
-
     finder = AiZynthFinder(configdict=config)
     finder.stock.select(stock_name)
     finder.expansion_policy.select(expansion_policy_name)
@@ -163,9 +211,11 @@ def run_aizynthfinder_predictions(
         progress_task = progress.add_task("Finding retrosynthetic paths", total=len(targets))
         with quiet_progress_info_logs():
             for target in targets:
-                with timer.measure(target.id):
+                target_id = target["id"]
+                target_smiles = target["smiles"]
+                with timer.measure(target_id):
                     try:
-                        finder.target_smiles = target.smiles
+                        finder.target_smiles = target_smiles
                         finder.prepare_tree()
                         finder.tree_search()
                         finder.build_routes()
@@ -174,24 +224,24 @@ def run_aizynthfinder_predictions(
                         if stats.get("is_solved", False):
                             solved_count += 1
 
-                        results[target.id] = (
+                        results[target_id] = (
                             finder.routes.dict_with_extra(include_metadata=False, include_scores=True)
                             if finder.routes
                             else {}
                         )
                     except Exception as e:
-                        logger.error(f"Failed to process target {target.id} ({target.smiles}): {e}", exc_info=True)
-                        results[target.id] = {}
+                        logger.error("Failed to process target %s (%s): %s", target_id, target_smiles, e, exc_info=True)
+                        results[target_id] = {}
                     finally:
                         progress.advance(progress_task)
 
     for target in targets:
-        results.setdefault(target.id, {})
+        results.setdefault(target["id"], {})
 
     if not targets:
         logger.warning("No targets selected for processing.")
 
-    return results, solved_count, timer.to_model()
+    return results, solved_count, timer.to_dict()
 
 
 def save_aizynthfinder_results(
@@ -202,40 +252,38 @@ def save_aizynthfinder_results(
     effective_config_path: Path,
     config_template_path: Path,
     script_name: str,
-    benchmark: Benchmark,
+    benchmark: Task,
     parameters: dict[str, Any],
     solved_count: int,
 ) -> None:
     summary = {
         "solved_count": solved_count,
         "total_targets": len(results),
-        "benchmark_total_targets": len(benchmark.targets),
+        "benchmark_total_targets": len(benchmark["targets"]),
     }
 
-    save_json_gz(results, save_dir / "results.json.gz")
-    save_execution_stats(runtime, save_dir / "execution_stats.json.gz")
+    results_path = save_dir / "results.json.gz"
+    manifest_path = save_dir / "manifest.json"
+    write_json_gz(results, results_path)
+    write_execution_stats(runtime, save_dir / "execution_stats.json.gz")
     manifest_parameters = {
         **parameters,
         "config_template_path": str(config_template_path.relative_to(DATA_DIR)),
         "effective_config_path": str(effective_config_path.relative_to(DATA_DIR)),
     }
-    manifest_directives = {
-        "adapter": "aizynthfinder",
-        "raw_results_filename": "results.json.gz",
-    }
-
-    manifest = create_manifest(
+    manifest = create_planner_manifest(
         action=script_name,
+        adapter="aizynthfinder",
+        raw_results_path=results_path,
         sources=[bench_path, effective_config_path],
-        root_dir=save_dir.parents[2],
-        outputs=[(save_dir / "results.json.gz", results, "unknown")],
+        root_dir=DATA_DIR,
         parameters=manifest_parameters,
-        directives=manifest_directives,
         statistics=summary,
     )
-
-    with open(save_dir / "manifest.json", "w", encoding="utf-8") as f:
-        f.write(manifest.model_dump_json(indent=2))
+    write_json(manifest, manifest_path)
+    verification = verify_planner_manifest(manifest_path, DATA_DIR)
+    if not verification["is_valid"]:
+        raise ValueError(f"Planner manifest verification failed: {verification['issues']}")
 
     logger.info(f"Completed processing {len(results)} targets")
     logger.info(f"Solved: {summary['solved_count']}")
