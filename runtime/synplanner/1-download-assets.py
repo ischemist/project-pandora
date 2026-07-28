@@ -22,6 +22,8 @@ assets = [
 ]
 
 benchmark_files = (
+    ("definitions/ursa-dca-2026.json.gz", "1-benchmarks/definitions/ursa-dca-2026.json.gz"),
+    ("definitions/ursa-dca-2026.manifest.json", "1-benchmarks/definitions/ursa-dca-2026.manifest.json"),
     ("definitions/ursa-expert-100.json.gz", "1-benchmarks/definitions/ursa-expert-100.json.gz"),
     ("definitions/ursa-expert-100.manifest.json", "1-benchmarks/definitions/ursa-expert-100.manifest.json"),
     ("definitions/ursa-bridge-100.json.gz", "1-benchmarks/definitions/ursa-bridge-100.json.gz"),
