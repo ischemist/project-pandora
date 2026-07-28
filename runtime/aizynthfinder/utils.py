@@ -34,6 +34,7 @@ logger = logging.getLogger("pandora.aizynthfinder")
 
 Task = dict[str, Any]
 ExecutionStats = dict[str, dict[str, float]]
+TargetResult = dict[str, Any] | list[dict[str, Any]]
 
 
 def configure_script_logging() -> None:
@@ -213,11 +214,11 @@ def run_aizynthfinder_predictions(
     shard_count: int = 1,
     shard_index: int = 0,
     expansion_policy_name: str = "uspto",
-) -> tuple[dict[str, dict[str, Any]], int, ExecutionStats]:
+) -> tuple[dict[str, TargetResult], int, ExecutionStats]:
     if shard_count <= 0 or not 0 <= shard_index < shard_count:
         raise ValueError(f"Invalid shard {shard_index} of {shard_count}")
 
-    results: dict[str, dict[str, Any]] = {}
+    results: dict[str, TargetResult] = {}
     solved_count = 0
     timer = ExecutionTimer()
     targets = list(benchmark["targets"].values())[shard_index::shard_count]
@@ -276,7 +277,7 @@ def shard_save_dir(base_dir: Path, *, shard_count: int, shard_index: int) -> Pat
 
 
 def save_aizynthfinder_results(
-    results: dict[str, dict[str, Any]],
+    results: dict[str, TargetResult],
     runtime: ExecutionStats,
     save_dir: Path,
     bench_path: Path,

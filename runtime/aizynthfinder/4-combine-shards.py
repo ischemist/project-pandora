@@ -13,6 +13,7 @@ from utils import (
     AIZYNTHFINDER_DIR,
     DATA_DIR,
     RAW_DIR,
+    TargetResult,
     configure_script_logging,
     load_aizynthfinder_benchmark,
     logger,
@@ -29,13 +30,21 @@ def require_mapping(value: Any, path: Path) -> dict[str, Any]:
     return dict(value)
 
 
+def normalize_target_result(value: Any, path: Path, target_id: str) -> TargetResult:
+    if isinstance(value, Mapping):
+        return dict(value)
+    if isinstance(value, list) and all(isinstance(route, Mapping) for route in value):
+        return [dict(route) for route in value]
+    raise ValueError(f"{path} result for {target_id} must be an object or a list of objects")
+
+
 def gather_shards(
     *,
     base_dir: Path,
     shard_count: int,
     ordered_target_ids: list[str],
-) -> tuple[dict[str, dict[str, Any]], ExecutionStats, dict[str, Any], list[Path], Path]:
-    results: dict[str, dict[str, Any]] = {}
+) -> tuple[dict[str, TargetResult], ExecutionStats, dict[str, Any], list[Path], Path]:
+    results: dict[str, TargetResult] = {}
     wall_time: dict[str, float] = {}
     cpu_time: dict[str, float] = {}
     sources: list[Path] = []
@@ -91,7 +100,12 @@ def gather_shards(
         if duplicate_ids:
             raise ValueError(f"Duplicate target IDs across shards: {sorted(duplicate_ids)}")
 
-        results.update({str(key): dict(value) for key, value in part_results.items()})
+        results.update(
+            {
+                str(key): normalize_target_result(value, results_path, str(key))
+                for key, value in part_results.items()
+            }
+        )
         wall_time.update({str(key): float(value) for key, value in part_wall.items()})
         cpu_time.update({str(key): float(value) for key, value in part_cpu.items()})
         sources.extend([manifest_path, stats_path])
