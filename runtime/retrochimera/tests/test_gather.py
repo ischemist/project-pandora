@@ -7,6 +7,7 @@ import pytest
 import retrocast
 
 from gather import (
+    AmbiguousResultMatchError,
     find_result_file,
     gather_results,
     normalize_target_id_for_filename,
@@ -47,6 +48,27 @@ def test_filename_matching_preserves_historical_convention(tmp_path: Path) -> No
     assert find_result_file("target one", tmp_path) == normalized
     assert find_result_file("(R)-Crizotinib", tmp_path) == special
     assert find_result_file("absent", tmp_path) is None
+
+
+def test_filename_matching_rejects_ambiguous_prefix_fallback(tmp_path: Path) -> None:
+    (tmp_path / "Crizotinib-first.json").write_text("{}", encoding="utf-8")
+    (tmp_path / "Crizotinib-second.json").write_text("{}", encoding="utf-8")
+
+    with pytest.raises(AmbiguousResultMatchError, match="multiple RetroChimera result files"):
+        find_result_file("(R)-Crizotinib", tmp_path)
+
+
+def test_gather_rejects_normalized_filename_collision(tmp_path: Path) -> None:
+    colliding_task = {
+        "targets": {
+            "target one": {"id": "target one"},
+            "target_one": {"id": "target_one"},
+        }
+    }
+    (tmp_path / "target_one.json").write_text("{}", encoding="utf-8")
+
+    with pytest.raises(AmbiguousResultMatchError, match="matches both 'target one' and 'target_one'"):
+        gather_results(colliding_task, tmp_path)
 
 
 def test_gather_preserves_payloads_and_reports_omissions(tmp_path: Path) -> None:

@@ -13,6 +13,10 @@ from tqdm import tqdm
 logger = logging.getLogger("pandora.retrochimera")
 
 
+class AmbiguousResultMatchError(ValueError):
+    """RetroChimera result files cannot be assigned one-to-one to task targets."""
+
+
 @dataclass(frozen=True)
 class GatherReport:
     results: dict[str, Any]
@@ -43,6 +47,11 @@ def find_result_file(target_id: str, eval_dir: Path) -> Path | None:
     if "(" in target_id and ")" in target_id:
         main_name = target_id.split(")")[-1].strip("-").strip()
         matches = sorted(eval_dir.glob(f"{main_name}*.json"))
+        if len(matches) > 1:
+            raise AmbiguousResultMatchError(
+                f"multiple RetroChimera result files match fallback for {target_id!r}: "
+                f"{', '.join(path.name for path in matches)}"
+            )
         if matches:
             return matches[0]
 
@@ -58,6 +67,7 @@ def gather_results(task: dict[str, Any], eval_dir: Path) -> GatherReport:
     matched_files: list[Path] = []
     missing_target_ids: list[str] = []
     malformed_target_ids: list[str] = []
+    assigned_files: dict[Path, str] = {}
 
     targets = task["targets"].values()
     for target in tqdm(targets, desc="Combining RetroChimera results"):
@@ -67,6 +77,13 @@ def gather_results(task: dict[str, Any], eval_dir: Path) -> GatherReport:
             missing_target_ids.append(target_id)
             continue
 
+        canonical_result_path = result_path.resolve()
+        previous_target_id = assigned_files.get(canonical_result_path)
+        if previous_target_id is not None:
+            raise AmbiguousResultMatchError(
+                f"RetroChimera result file {result_path.name!r} matches both {previous_target_id!r} and {target_id!r}"
+            )
+        assigned_files[canonical_result_path] = target_id
         matched_files.append(result_path)
         try:
             results[target_id] = retrocast.read_json(result_path)
