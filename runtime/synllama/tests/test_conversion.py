@@ -136,13 +136,16 @@ def test_artifact_and_manifest_lifecycle(tmp_path: Path, monkeypatch: pytest.Mon
     }
     assert retrocast.verify_planner_manifest(output_dir / "manifest.json", data_dir)["is_valid"] is True
     assert retrocast.read_json(output_dir / "results.json.gz") == converted.routes_by_target
-    assert len(
-        retrocast.adapt(
-            converted.routes_by_target["first"],
-            "synllama",
-            target=loaded_task["targets"]["first"],
+    assert (
+        len(
+            retrocast.adapt(
+                converted.routes_by_target["first"],
+                "synllama",
+                target=loaded_task["targets"]["first"],
+            )
         )
-    ) == 1
+        == 1
+    )
     assert retrocast.read_json(output_dir / "execution_stats.json.gz") == {
         "wall_time": {"first": 1.5},
         "cpu_time": {},
