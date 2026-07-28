@@ -6,6 +6,7 @@ Usage:
 
 from __future__ import annotations
 
+import shutil
 import urllib.request
 from pathlib import Path
 
@@ -40,8 +41,17 @@ def download_file(url: str, destination: Path) -> None:
         print(f"Skipping existing {destination}")
         return
     destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_name(f"{destination.name}.part")
+    request = urllib.request.Request(url, headers={"User-Agent": "Pandora/1.0"})
     print(f"Downloading {url} -> {destination}")
-    urllib.request.urlretrieve(url, destination)
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            with open(temporary, "wb") as fileobj:
+                shutil.copyfileobj(response, fileobj)
+        temporary.replace(destination)
+    except Exception:
+        temporary.unlink(missing_ok=True)
+        raise
 
 
 def download_benchmark_files() -> None:
