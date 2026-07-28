@@ -22,6 +22,7 @@ from utils import (
     quiet_aizynthfinder_debug_logs,
     run_aizynthfinder_predictions,
     save_aizynthfinder_results,
+    shard_save_dir,
     write_effective_config,
 )
 
@@ -33,11 +34,17 @@ PLANNER_VERSION = "4.4.1"
 if __name__ == "__main__":
     parser = create_benchmark_parser("Run AiZynthFinder Retro*")
     args = parser.parse_args()
+    if args.shard_index >= args.shard_count:
+        parser.error("--shard-index must be smaller than --shard-count")
 
     benchmark, bench_path = load_aizynthfinder_benchmark(args.benchmark)
 
     folder_name = f"aizynthfinder-{PLANNER_VERSION}-retro-star-iter{args.iteration_limit}-depth{args.max_transforms}"
-    save_dir = RAW_DIR / folder_name / benchmark["name"]
+    save_dir = shard_save_dir(
+        RAW_DIR / folder_name / benchmark["name"],
+        shard_count=args.shard_count,
+        shard_index=args.shard_index,
+    )
     save_dir.mkdir(parents=True, exist_ok=True)
 
     config_path = AIZYNTHFINDER_DIR / "config-retrostar.yaml"
@@ -53,6 +60,8 @@ if __name__ == "__main__":
         benchmark=benchmark,
         config=config,
         limit=args.limit,
+        shard_count=args.shard_count,
+        shard_index=args.shard_index,
     )
     parameters = {
         "planner_version": PLANNER_VERSION,
@@ -62,6 +71,14 @@ if __name__ == "__main__":
     }
     if args.limit is not None:
         parameters["limit"] = args.limit
+    if args.shard_count > 1:
+        parameters.update(
+            {
+                "shard_count": args.shard_count,
+                "shard_index": args.shard_index,
+                "shard_strategy": "round_robin",
+            }
+        )
 
     save_aizynthfinder_results(
         results=results,

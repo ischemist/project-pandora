@@ -80,6 +80,13 @@ def positive_int(value: str) -> int:
     return parsed
 
 
+def nonnegative_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 0:
+        raise argparse.ArgumentTypeError("must be a non-negative integer")
+    return parsed
+
+
 def create_benchmark_parser(description: str) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
@@ -107,6 +114,18 @@ def create_benchmark_parser(description: str) -> argparse.ArgumentParser:
         type=positive_int,
         default=None,
         help="Maximum number of targets to process. Useful for smoke tests.",
+    )
+    parser.add_argument(
+        "--shard-count",
+        type=positive_int,
+        default=1,
+        help="Number of round-robin target shards.",
+    )
+    parser.add_argument(
+        "--shard-index",
+        type=nonnegative_int,
+        default=0,
+        help="Zero-based round-robin shard index.",
     )
     return parser
 
@@ -191,12 +210,17 @@ def run_aizynthfinder_predictions(
     config: dict[str, Any],
     *,
     limit: int | None,
+    shard_count: int = 1,
+    shard_index: int = 0,
     expansion_policy_name: str = "uspto",
 ) -> tuple[dict[str, dict[str, Any]], int, ExecutionStats]:
+    if shard_count <= 0 or not 0 <= shard_index < shard_count:
+        raise ValueError(f"Invalid shard {shard_index} of {shard_count}")
+
     results: dict[str, dict[str, Any]] = {}
     solved_count = 0
     timer = ExecutionTimer()
-    targets = list(benchmark["targets"].values())
+    targets = list(benchmark["targets"].values())[shard_index::shard_count]
     if limit is not None:
         targets = targets[:limit]
 
@@ -242,6 +266,12 @@ def run_aizynthfinder_predictions(
         logger.warning("No targets selected for processing.")
 
     return results, solved_count, timer.to_dict()
+
+
+def shard_save_dir(base_dir: Path, *, shard_count: int, shard_index: int) -> Path:
+    if shard_count == 1:
+        return base_dir
+    return base_dir / "shards" / f"part-{shard_index:02d}-of-{shard_count:02d}"
 
 
 def save_aizynthfinder_results(
