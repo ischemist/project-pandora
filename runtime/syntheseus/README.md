@@ -7,6 +7,9 @@ newest upstream build published for that PyTorch line, and PyTorch 2.6 is the
 newest DGL wheel index published for this platform. Advancing PyTorch further
 requires a matching upstream GraphBolt build.
 
+DistDGL is unsupported in this runtime; model initialization replaces its
+pickle-based RPC deserializer with a fail-closed error.
+
 Pandora owns the conversion from Syntheseus runtime objects to the raw
 `syntheseus` adapter tree. `TemplateAwareLocalRetroModel` mirrors the upstream
 LocalRetro decoding path while retaining the selected source reaction SMARTS in
