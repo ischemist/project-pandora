@@ -48,7 +48,7 @@ Planner environments live under `runtime/<planner>` with their own locks. Legacy
 - `dreamretroer`
 - `multistepttl`
 - `retrochimera`
-- `retrostar`
+- `runtime/retrostar`
 - `synllama`
 - `runtime/syntheseus`
 - `runtime/synplanner`
