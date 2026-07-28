@@ -21,7 +21,8 @@ start_worker() {
   local label="$1"
   shift
   printf 'starting %s\n' "$label"
-  OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 "$python_bin" "$@" >"$logs_dir/$label.log" 2>&1 &
+  PANDORA_FORCE_TERMINAL=1 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 \
+    "$python_bin" "$@" >"$logs_dir/$label.log" 2>&1 &
   pids+=("$!")
   labels+=("$label")
 }

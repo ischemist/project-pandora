@@ -231,7 +231,8 @@ def run_aizynthfinder_predictions(
     # Keep the filter fixed so checkpoint comparisons isolate the expansion policy.
     finder.filter_policy.select("uspto")
 
-    with create_cli_progress(console=Console(), unit="target") as progress:
+    console = Console(force_terminal=os.environ.get("PANDORA_FORCE_TERMINAL") == "1")
+    with create_cli_progress(console=console, unit="target") as progress:
         progress_task = progress.add_task("Finding retrosynthetic paths", total=len(targets))
         with quiet_progress_info_logs():
             for target in targets:
