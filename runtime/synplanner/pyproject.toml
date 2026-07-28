@@ -5,12 +5,14 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11, <3.13"
 dependencies = [
-  "retrocast==0.7.1",
+  "retrocast",
   "synplanner>=1.3.2",
 ]
+
+[tool.uv.sources]
+retrocast = { git = "https://github.com/ischemist/project-procrustes", rev = "969f59dd7a849af8341bae91e6d8765925b89bc5b" }
 
 [tool.uv]
 # Require a short cooling-off window before newly uploaded artifacts are eligible.
 required-version = ">=0.9.17"
 exclude-newer = "7 days"
-exclude-newer-package = { retrocast = "2026-06-06T00:00:00Z" }

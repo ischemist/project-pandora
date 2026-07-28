@@ -4,10 +4,12 @@ version = "0.1.0"
 requires-python = ">=3.11, <3.13"
 dependencies = [
     "aizynthfinder==4.4.1",
-    "retrocast==0.7.1",
+    "retrocast",
 ]
+
+[tool.uv.sources]
+retrocast = { git = "https://github.com/ischemist/project-procrustes", rev = "969f59dd7a849af8341bae91e6d8765925b89bc5b" }
 
 [tool.uv]
 required-version = ">=0.9.17"
 exclude-newer = "7 days"
-exclude-newer-package = { retrocast = "2026-06-06T00:00:00Z" }

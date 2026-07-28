@@ -12,9 +12,6 @@ resolution-markers = [
 exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
 exclude-newer-span = "P7D"
 
-[options.exclude-newer-package]
-retrocast = "2026-06-06T00:00:00Z"
-
 [[package]]
 name = "aizynthfinder"
 version = "4.4.1"
@@ -59,7 +56,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "aizynthfinder", specifier = "==4.4.1" },
-    { name = "retrocast", specifier = "==0.7.1" },
+    { name = "retrocast", git = "https://github.com/ischemist/project-procrustes?rev=969f59dd7a849af8341bae91e6d8765925b89bc5b" },
 ]
 
 [[package]]
@@ -2395,20 +2392,8 @@ wheels = [
 
 [[package]]
 name = "retrocast"
-version = "0.7.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "packaging" },
-    { name = "pydantic" },
-    { name = "pyyaml" },
-    { name = "rdkit" },
-    { name = "rich" },
-    { name = "tqdm" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/35/ba/7e6ecb73be71136f263668548af3a6c703ea0650d85295d7ece343b098e7/retrocast-0.7.1.tar.gz", hash = "sha256:4fc92930e22485432c28bf234c7088f1b2dfa349ad6a21a74e4dfd6a9a0b1584", size = 117691, upload-time = "2026-06-05T18:42:45.033Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f2/cd/aa11c64e25c7887ceb7c2df094d899e4ddc71018289ff6cb264e8368e282/retrocast-0.7.1-py3-none-any.whl", hash = "sha256:1e0b026d3feb14b6dff01109941334fe733aa558ebcb546dc273b78b2b9b4f1b", size = 159751, upload-time = "2026-06-05T18:42:46.254Z" },
-]
+version = "0.8.2"
+source = { git = "https://github.com/ischemist/project-procrustes?rev=969f59dd7a849af8341bae91e6d8765925b89bc5b#969f59dd7a849af8341bae91e6d8765925b89bc5" }
 
 [[package]]
 name = "rfc3339-validator"
