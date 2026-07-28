@@ -22,11 +22,13 @@ download_file() {
     -o "$destination" "$base_url/$source_path"
 }
 
+uv run --directory "$script_dir" 1-download-assets.py
+
 download_file "definitions/$benchmark.json.gz"
 download_file "definitions/$benchmark.manifest.json"
 download_file "stocks/ursa-stock.csv.gz"
 download_file "stocks/ursa-stock.manifest.json"
 
-uv run --directory "$script_dir" 2-run-synth-retro0-local-retro.py \
+uv run --directory "$script_dir" 2-run-retrostar.py \
   --benchmark "$benchmark" \
   --effort high
