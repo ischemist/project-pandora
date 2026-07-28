@@ -20,7 +20,7 @@ dependencies = [
 [tool.uv]
 required-version = ">=0.9.17"
 exclude-newer = "7 days"
+exclude-newer-package = { retrocast = "2026-07-28T05:08:39Z" }
 
 [tool.uv.sources]
 retro-star = { git = "https://github.com/anmorgunov/retro_star.git", rev = "f392fdc920d12d325ef61b8622a8795ff06fa49f" }
-retrocast = { git = "https://github.com/ischemist/project-procrustes.git", rev = "969f59dd7a849af8341bae91e6d8765925b89bc5" }
