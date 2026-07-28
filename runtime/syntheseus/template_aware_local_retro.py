@@ -64,6 +64,10 @@ def _decode_predictions(
 class TemplateAwareLocalRetroModel(LocalRetroModel):
     """LocalRetro model preserving its chosen reaction SMARTS on each prediction."""
 
+    @property
+    def name(self) -> str:
+        return "LocalRetro"
+
     def _build_batch_predictions(
         self,
         batch: Any,
