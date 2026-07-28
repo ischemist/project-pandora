@@ -43,13 +43,13 @@ Pandora owns planner execution, logging, progress, timing measurement, planner-s
 Planner environments live under `runtime/<planner>` with their own locks. Legacy entries in the list below are being migrated from `scripts/` into that layout:
 
 - `runtime/aizynthfinder`
-- `askcos`
-- `directmultistep`
-- `dreamretroer`
-- `multistepttl`
-- `retrochimera`
+- `runtime/askcos`
+- `runtime/directmultistep`
+- `runtime/dreamretroer`
+- `runtime/multistepttl`
+- `runtime/retrochimera`
 - `runtime/retrostar`
-- `synllama`
+- `runtime/synllama`
 - `runtime/syntheseus`
 - `runtime/synplanner`
 
