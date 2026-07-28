@@ -72,7 +72,18 @@ def positive_int(value: str) -> int:
     return parsed
 
 
-def create_benchmark_parser(description: str) -> argparse.ArgumentParser:
+def nonnegative_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 0:
+        raise argparse.ArgumentTypeError("must be a non-negative integer")
+    return parsed
+
+
+def create_benchmark_parser(
+    description: str,
+    *,
+    enable_sharding: bool = False,
+) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
         "--benchmark",
@@ -86,6 +97,19 @@ def create_benchmark_parser(description: str) -> argparse.ArgumentParser:
         default=None,
         help="Maximum number of targets to process. Useful for smoke tests.",
     )
+    if enable_sharding:
+        parser.add_argument(
+            "--shard-count",
+            type=positive_int,
+            default=1,
+            help="Number of round-robin target shards.",
+        )
+        parser.add_argument(
+            "--shard-index",
+            type=nonnegative_int,
+            default=0,
+            help="Zero-based round-robin shard index.",
+        )
     return parser
 
 
@@ -158,6 +182,8 @@ def run_synplanner_predictions(
     expansion_function: Callable,
     evaluation_function: Callable,
     limit: int | None = None,
+    shard_count: int = 1,
+    shard_index: int = 0,
 ) -> tuple[dict[str, list[dict[str, Any]]], int, ExecutionStats]:
     """Run Synplanner search over all benchmark targets.
 
@@ -172,11 +198,14 @@ def run_synplanner_predictions(
     Returns:
         Tuple of (results_dict, solved_count, execution_runtime).
     """
+    if shard_count <= 0 or not 0 <= shard_index < shard_count:
+        raise ValueError(f"Invalid shard {shard_index} of {shard_count}")
+
     results: dict[str, list[dict[str, Any]]] = {}
     solved_count = 0
     timer = ExecutionTimer()
 
-    targets = list(benchmark["targets"].values())
+    targets = list(benchmark["targets"].values())[shard_index::shard_count]
     if limit is not None:
         targets = targets[:limit]
 
@@ -216,6 +245,12 @@ def run_synplanner_predictions(
     return results, solved_count, timer.to_dict()
 
 
+def shard_save_dir(base_dir: Path, *, shard_count: int, shard_index: int) -> Path:
+    if shard_count == 1:
+        return base_dir
+    return base_dir / "shards" / f"part-{shard_index:02d}-of-{shard_count:02d}"
+
+
 def save_synplanner_results(
     results: dict[str, list[dict[str, Any]]],
     runtime: ExecutionStats,
@@ -228,6 +263,7 @@ def save_synplanner_results(
     benchmark: Task,
     planner_version: str,
     parameters: dict[str, Any] | None = None,
+    additional_sources: list[Path] | None = None,
 ) -> None:
     """Save Synplanner results, execution stats, and manifest.
 
@@ -267,7 +303,7 @@ def save_synplanner_results(
         action=script_name,
         adapter="synplanner",
         raw_results_path=results_path,
-        sources=[bench_path, stock_path, effective_config_path],
+        sources=[bench_path, stock_path, effective_config_path, *(additional_sources or [])],
         root_dir=DATA_DIR,
         statistics=summary,
         parameters=manifest_parameters,

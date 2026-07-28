@@ -28,6 +28,7 @@ from utils import (
     logger,
     run_synplanner_predictions,
     save_synplanner_results,
+    shard_save_dir,
     write_effective_config,
 )
 
@@ -37,7 +38,10 @@ configure_script_logging()
 PLANNER_VERSION = "1.3.2"
 
 if __name__ == "__main__":
-    parser = create_benchmark_parser("Run Synplanner MCTS with value-network evaluation")
+    parser = create_benchmark_parser(
+        "Run Synplanner MCTS with value-network evaluation",
+        enable_sharding=True,
+    )
     parser.add_argument(
         "--iteration-limit",
         type=int,
@@ -46,12 +50,18 @@ if __name__ == "__main__":
         help="Maximum tree search iterations.",
     )
     args = parser.parse_args()
+    if args.shard_index >= args.shard_count:
+        parser.error("--shard-index must be smaller than --shard-count")
 
     benchmark, building_blocks, bench_path, stock_path = load_benchmark_and_stock(args.benchmark)
     stock_name = benchmark_stock_name(benchmark)
 
     folder_name = f"synplanner-{PLANNER_VERSION}-mcts-val-iter{args.iteration_limit}"
-    save_dir = RAW_DIR / folder_name / benchmark["name"]
+    save_dir = shard_save_dir(
+        RAW_DIR / folder_name / benchmark["name"],
+        shard_count=args.shard_count,
+        shard_index=args.shard_index,
+    )
     save_dir.mkdir(parents=True, exist_ok=True)
 
     logger.info("stock: %s", stock_name)
@@ -98,6 +108,8 @@ if __name__ == "__main__":
         expansion_function=policy_function,
         evaluation_function=evaluation_function,
         limit=args.limit,
+        shard_count=args.shard_count,
+        shard_index=args.shard_index,
     )
     parameters = {
         "algorithm": tree_config.algorithm,
@@ -107,6 +119,14 @@ if __name__ == "__main__":
     }
     if args.limit is not None:
         parameters["limit"] = args.limit
+    if args.shard_count > 1:
+        parameters.update(
+            {
+                "shard_count": args.shard_count,
+                "shard_index": args.shard_index,
+                "shard_strategy": "round_robin",
+            }
+        )
 
     save_synplanner_results(
         results=results,
