@@ -48,7 +48,7 @@ currently that includes:
 - `dreamretroer`
 - `multistepttl`
 - `retrochimera`
-- `retrostar`
+- `runtime/retrostar`
 - `synllama`
 - `syntheseus`
 - `runtime/synplanner`
