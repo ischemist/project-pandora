@@ -25,10 +25,10 @@ RetroCast docs live at [retrocast.ischemist.com](https://retrocast.ischemist.com
 - benchmark definitions
 - stock files
 - raw result layout
-- manifests and result serialization
+- manifest and execution-stat schemas
 - adapter expectations for downstream ingestion/scoring
 
-so this repo is split out physically, but not fully severed conceptually. some scripts here still import `RetroCast` helpers for benchmark io, manifests, and serialization.
+Pandora owns planner execution, logging, progress, timing measurement, planner-specific gather behavior, and serialization of planner runtime objects into documented raw output. RetroCast supplies the shared task, stock, JSON, execution-stat, manifest, and provenance contracts used to publish those raw artifacts.
 
 ## what lives here
 
@@ -40,17 +40,17 @@ so this repo is split out physically, but not fully severed conceptually. some s
 - per-runner locked environments where needed
 - shared RetroCast-style runtime assets under `data/retrocast`
 
-currently that includes:
+Planner environments live under `runtime/<planner>` with their own locks. Legacy entries in the list below are being migrated from `scripts/` into that layout:
 
-- `aizynthfinder`
-- `askcos`
-- `directmultistep`
-- `dreamretroer`
-- `multistepttl`
-- `retrochimera`
-- `retrostar`
-- `synllama`
-- `syntheseus`
+- `runtime/aizynthfinder`
+- `runtime/askcos`
+- `runtime/directmultistep`
+- `runtime/dreamretroer`
+- `runtime/multistepttl`
+- `runtime/retrochimera`
+- `runtime/retrostar`
+- `runtime/synllama`
+- `runtime/syntheseus`
 - `runtime/synplanner`
 
 ## what does not live here
@@ -65,6 +65,6 @@ things that remain in `project-procrustes`:
 
 ## status
 
-this repo is currently an extraction, not a total dependency divorce. expect some awkward transitional coupling while runner code is peeled away from shared RetroCast utilities.
+Legacy scripts are being moved into isolated runtimes. New runner code must use RetroCast's curated public producer API rather than importing its internal Python package architecture.
 
 `data/retrocast/0-assets/model-configs` is the shared transitional home for model configs. lightweight yaml/config files are tracked; large downloaded model payloads such as checkpoints, onnx files, hdf5 stocks, pickles, and generated outputs are ignored locally.

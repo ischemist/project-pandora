@@ -1,0 +1,28 @@
+[project]
+name = "dreamretroer-wrapper"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "retrocast==0.8.2",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.15.12",
+]
+
+[tool.uv]
+required-version = ">=0.9.17"
+exclude-newer = "7 days"
+exclude-newer-package = { retrocast = "2026-07-28T05:08:39Z" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
