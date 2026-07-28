@@ -93,6 +93,14 @@ def test_serialize_route_rejects_missing_target() -> None:
         serialize_route(Graph(target_node, {}), [], "CCO")
 
 
+def test_serialize_route_accepts_canonicalized_target_smiles() -> None:
+    target_node = MoleculeNode(Molecule("CCO"))
+
+    serialized = serialize_route(Graph(target_node, {}), [target_node], "OCC")
+
+    assert serialized["smiles"] == "CCO"
+
+
 def test_serialize_route_rejects_cycles() -> None:
     target = Molecule("CCO")
     reaction = Reaction(product=target, reactants=(target,))
