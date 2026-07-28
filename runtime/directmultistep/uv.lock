@@ -10,6 +10,9 @@ resolution-markers = [
 exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
 exclude-newer-span = "P7D"
 
+[options.exclude-newer-package]
+retrocast = "2026-07-28T05:08:39Z"
+
 [[package]]
 name = "aiohappyeyeballs"
 version = "2.7.1"
@@ -211,7 +214,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "directmultistep", specifier = "==1.1.3" },
-    { name = "retrocast", git = "https://github.com/ischemist/project-procrustes.git?rev=969f59dd7a849af8341bae91e6d8765925b89bc5" },
+    { name = "retrocast", specifier = "==0.8.2" },
 ]
 
 [package.metadata.requires-dev]
@@ -840,7 +843,14 @@ wheels = [
 [[package]]
 name = "retrocast"
 version = "0.8.2"
-source = { git = "https://github.com/ischemist/project-procrustes.git?rev=969f59dd7a849af8341bae91e6d8765925b89bc5#969f59dd7a849af8341bae91e6d8765925b89bc5" }
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0a/b7/c98d2417bdc6f4ab00386407d4cf5bdaec0aea56dd3a39d231bb8464df58/retrocast-0.8.2.tar.gz", hash = "sha256:b0184ec0e85362f2ab8a2aa2e09cee2b4592d694b41ba2fb40cb61370a6c9b06", size = 153194, upload-time = "2026-07-28T05:08:38.75Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0c/8a/9d3da55e47baf0fc23eac46c07a8ea41d8b6e22187dd80e221f4553a3538/retrocast-0.8.2-cp311-abi3-macosx_11_0_arm64.whl", hash = "sha256:e8ff1c5ff3172fc6db024a82f663fcf701b833670f292b0aa6e98f593bd7e97a", size = 7195885, upload-time = "2026-07-28T05:08:31.237Z" },
+    { url = "https://files.pythonhosted.org/packages/f6/31/3f54696e5348c8729d84b828241e2b3c826db523bdd568ef958187ff7dc7/retrocast-0.8.2-cp311-abi3-macosx_11_0_x86_64.whl", hash = "sha256:e71b91129545f4aa7289623282edba1e76e71b2dbe3ad68646b34b0237557d10", size = 7820237, upload-time = "2026-07-28T05:08:33.153Z" },
+    { url = "https://files.pythonhosted.org/packages/6a/2f/0e6eee497d450c0a6462cd30e49b16e4ff56fdd165920cff498c62d9ad55/retrocast-0.8.2-cp311-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:639d3f96f310ad00134b99aa137cb2b7def845e7b833e165d20b2b54b455ed52", size = 8898594, upload-time = "2026-07-28T05:08:35.099Z" },
+    { url = "https://files.pythonhosted.org/packages/b8/26/432fe7d7ed78ddcddf48870fd6d661e1737c7dc894ff69cddbdde9ad1c05/retrocast-0.8.2-cp311-abi3-win_amd64.whl", hash = "sha256:71d8e9530fa00573a87bb933796c654f6e174e17632d6c1f8b6c9e562c86f457", size = 6583946, upload-time = "2026-07-28T05:08:37.314Z" },
+]
 
 [[package]]
 name = "ruff"

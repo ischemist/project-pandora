@@ -30,6 +30,4 @@ The combiner rejects missing, duplicate, or unexpected target IDs. It also
 combines per-target execution statistics and records the part manifests as
 provenance sources.
 
-The RetroCast dependency is temporarily locked to the exact commit containing
-the 0.8.2 producer API. Replace the Git dependency with `retrocast==0.8.2`
-after that release is published and regenerate `uv.lock`.
+The runtime pins the released RetroCast 0.8.2 producer API.
