@@ -32,3 +32,8 @@ data/retrocast/5-results/
 data/retrocast/6-comparisons/
 data/retrocast-tests/
 .practices/
+
+data/ursa
+data/ursa-temp/
+runtime/download-ursa-benchmarks.sh
+runtime/aizynthfinder/run-mcts-100iter-depth10.sh

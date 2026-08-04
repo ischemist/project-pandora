@@ -21,6 +21,10 @@ class Molecule:
     smiles: str
     metadata: dict[str, Any] = field(default_factory=dict)
 
+    def __post_init__(self) -> None:
+        canonical_smiles = {"OCC": "CCO"}.get(self.smiles, self.smiles)
+        object.__setattr__(self, "smiles", canonical_smiles)
+
 
 @dataclass(frozen=True)
 class Reaction:
@@ -91,6 +95,21 @@ def test_serialize_route_rejects_missing_target() -> None:
     target_node = MoleculeNode(Molecule("CCO"))
     with pytest.raises(SyntheseusSerializationError, match="Target molecule"):
         serialize_route(Graph(target_node, {}), [], "CCO")
+
+
+def test_serialize_route_accepts_canonicalized_target_smiles() -> None:
+    target_node = MoleculeNode(Molecule("CCO"))
+
+    serialized = serialize_route(Graph(target_node, {}), [target_node], "OCC")
+
+    assert serialized["smiles"] == "CCO"
+
+
+def test_serialize_route_rejects_different_target_molecule() -> None:
+    target_node = MoleculeNode(Molecule("CCO"))
+
+    with pytest.raises(SyntheseusSerializationError, match="does not match route root"):
+        serialize_route(Graph(target_node, {}), [target_node], "CCN")
 
 
 def test_serialize_route_rejects_cycles() -> None:

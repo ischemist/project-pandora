@@ -62,6 +62,14 @@ def serialize_route(graph: Any, route_nodes: Iterable[Any], target_smiles: str) 
     """Convert one extracted Syntheseus route to the raw bipartite tree consumed by RetroCast."""
     nodes = set(route_nodes)
     root_node = graph.root_node
-    if root_node not in nodes or not hasattr(root_node, "mol") or root_node.mol.smiles != target_smiles:
+    if root_node not in nodes or not hasattr(root_node, "mol"):
         raise SyntheseusSerializationError(f"Target molecule {target_smiles!r} is missing from the route")
+    try:
+        canonical_target_smiles = type(root_node.mol)(target_smiles).smiles
+    except (TypeError, ValueError) as error:
+        raise SyntheseusSerializationError(f"Target molecule {target_smiles!r} is invalid") from error
+    if canonical_target_smiles != root_node.mol.smiles:
+        raise SyntheseusSerializationError(
+            f"Target molecule {target_smiles!r} does not match route root {root_node.mol.smiles!r}"
+        )
     return _build_tree(graph, root_node, nodes, frozenset())

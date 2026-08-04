@@ -84,6 +84,10 @@ class TemplateAwareLocalRetroModel(LocalRetroModel):
         _disable_distdgl_rpc_deserialization()
         super().__init__(*args, **kwargs)
 
+    @property
+    def name(self) -> str:
+        return "LocalRetro"
+
     def _build_batch_predictions(
         self,
         batch: Any,

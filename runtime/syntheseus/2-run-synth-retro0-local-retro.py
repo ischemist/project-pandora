@@ -30,7 +30,10 @@ PLANNER_VERSION = "0.7.2"
 if __name__ == "__main__":
     configure_script_logging()
     args = create_parser("Run Syntheseus Retro* search with LocalRetro").parse_args()
-    reaction_model_calls = 500 if args.effort == "high" else 100
+    iterations = 500 if args.effort == "high" else 100
+    reaction_model_calls = iterations
+    max_expansion_depth = 10
+    time_limit_seconds = 300.0
     task, building_blocks, task_path, stock_path, stock_name = load_task_and_stock(args.benchmark)
     folder_name = "syntheseus-retro0-local-retro"
     if args.effort != "normal":
@@ -45,8 +48,10 @@ if __name__ == "__main__":
         "reaction_model": "local-retro",
         "search_strategy": "retro_star",
         "effort": args.effort,
+        "iteration_limit": iterations,
         "reaction_model_call_limit": reaction_model_calls,
-        "time_limit_seconds": 300.0,
+        "max_expansion_depth": max_expansion_depth,
+        "time_limit_seconds": time_limit_seconds,
     }
     if args.limit is not None:
         parameters["limit"] = args.limit
@@ -72,8 +77,10 @@ if __name__ == "__main__":
                     or_node_cost_fn=retro_star.MolIsPurchasableCost(),
                     and_node_cost_fn=ReactionModelLogProbCost(normalize=False),
                     value_function=ConstantNodeEvaluator(0.0),
+                    limit_iterations=iterations,
                     limit_reaction_model_calls=reaction_model_calls,
-                    time_limit_s=300.0,
+                    max_expansion_depth=max_expansion_depth,
+                    time_limit_s=time_limit_seconds,
                 )
                 search.reset()
                 graph, _ = search.run_from_mol(Molecule(target_smiles))
