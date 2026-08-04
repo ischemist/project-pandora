@@ -64,9 +64,7 @@ def convert_csv(input_path: Path, task: Mapping[str, Any]) -> ConversionResult:
             columns = set(reader.fieldnames or [])
             missing_columns = {"Structure ID", "synthesis"} - columns
             if missing_columns:
-                raise SynLlamaConversionError(
-                    f"SynLlama CSV is missing required columns: {sorted(missing_columns)}"
-                )
+                raise SynLlamaConversionError(f"SynLlama CSV is missing required columns: {sorted(missing_columns)}")
 
             for row in reader:
                 total_rows += 1
@@ -80,9 +78,7 @@ def convert_csv(input_path: Path, task: Mapping[str, Any]) -> ConversionResult:
                         f"SynLlama CSV target {target_id!r} is not present in task {task['name']!r}"
                     )
 
-                routes_by_target.setdefault(target_id, []).append(
-                    {"synthesis_string": synthesis_string}
-                )
+                routes_by_target.setdefault(target_id, []).append({"synthesis_string": synthesis_string})
                 time_value = row.get("time, s")
                 if not time_value:
                     continue

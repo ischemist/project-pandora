@@ -3,7 +3,7 @@ name = "syntheseus-wrapper"
 version = "0.1.0"
 requires-python = "==3.11.*"
 dependencies = [
-  "dgl",
+  "dgl==2.5.0",
   "faiss-cpu",
   "numpy<2",
   "pandas<2.2",
@@ -11,17 +11,16 @@ dependencies = [
   "pyyaml",
   "retrocast==0.8.2",
   "syntheseus[local-retro]==0.7.2",
-  "torch<=2.1",
+  "torch==2.6.0",
   "torch-scatter",
-  "torchdata<=0.7.0",
 ]
 
 [dependency-groups]
 dev = ["pytest"]
 
 [tool.uv.sources]
-dgl = { url = "https://data.dgl.ai/wheels/torch-2.1/dgl-2.2.1-cp311-cp311-manylinux1_x86_64.whl" }
-torch-scatter = { url = "https://data.pyg.org/whl/torch-2.1.0%2Bcpu/torch_scatter-2.1.2%2Bpt21cpu-cp311-cp311-linux_x86_64.whl" }
+dgl = { url = "https://data.dgl.ai/wheels/torch-2.6/dgl-2.5.0-cp311-cp311-manylinux1_x86_64.whl" }
+torch-scatter = { url = "https://data.pyg.org/whl/torch-2.6.0%2Bcpu/torch_scatter-2.1.2%2Bpt26cpu-cp311-cp311-linux_x86_64.whl" }
 
 [tool.uv]
 required-version = ">=0.9.17"

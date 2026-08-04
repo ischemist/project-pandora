@@ -210,9 +210,7 @@ def gather_results(
         if result_path is not None:
             target_ids_by_result.setdefault(result_path.resolve(), []).append(target_id)
     collisions = {
-        result_path: target_ids
-        for result_path, target_ids in target_ids_by_result.items()
-        if len(target_ids) > 1
+        result_path: target_ids for result_path, target_ids in target_ids_by_result.items() if len(target_ids) > 1
     }
     if collisions:
         details = "; ".join(
