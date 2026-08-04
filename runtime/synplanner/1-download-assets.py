@@ -45,9 +45,11 @@ def download_file(url: str, destination: Path) -> None:
     request = urllib.request.Request(url, headers={"User-Agent": "Pandora/1.0"})
     print(f"Downloading {url} -> {destination}")
     try:
-        with urllib.request.urlopen(request, timeout=60) as response:
-            with open(temporary, "wb") as fileobj:
-                shutil.copyfileobj(response, fileobj)
+        with (
+            urllib.request.urlopen(request, timeout=60) as response,
+            open(temporary, "wb") as fileobj,
+        ):
+            shutil.copyfileobj(response, fileobj)
         temporary.replace(destination)
     except Exception:
         temporary.unlink(missing_ok=True)
