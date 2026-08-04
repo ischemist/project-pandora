@@ -34,7 +34,6 @@ logger = logging.getLogger("pandora.aizynthfinder")
 
 Task = dict[str, Any]
 ExecutionStats = dict[str, dict[str, float]]
-TargetResult = dict[str, Any] | list[dict[str, Any]]
 
 
 def configure_script_logging() -> None:
@@ -81,13 +80,6 @@ def positive_int(value: str) -> int:
     return parsed
 
 
-def nonnegative_int(value: str) -> int:
-    parsed = int(value)
-    if parsed < 0:
-        raise argparse.ArgumentTypeError("must be a non-negative integer")
-    return parsed
-
-
 def create_benchmark_parser(description: str) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
@@ -115,18 +107,6 @@ def create_benchmark_parser(description: str) -> argparse.ArgumentParser:
         type=positive_int,
         default=None,
         help="Maximum number of targets to process. Useful for smoke tests.",
-    )
-    parser.add_argument(
-        "--shard-count",
-        type=positive_int,
-        default=1,
-        help="Number of round-robin target shards.",
-    )
-    parser.add_argument(
-        "--shard-index",
-        type=nonnegative_int,
-        default=0,
-        help="Zero-based round-robin shard index.",
     )
     return parser
 
@@ -211,17 +191,12 @@ def run_aizynthfinder_predictions(
     config: dict[str, Any],
     *,
     limit: int | None,
-    shard_count: int = 1,
-    shard_index: int = 0,
     expansion_policy_name: str = "uspto",
-) -> tuple[dict[str, TargetResult], int, ExecutionStats]:
-    if shard_count <= 0 or not 0 <= shard_index < shard_count:
-        raise ValueError(f"Invalid shard {shard_index} of {shard_count}")
-
-    results: dict[str, TargetResult] = {}
+) -> tuple[dict[str, dict[str, Any]], int, ExecutionStats]:
+    results: dict[str, dict[str, Any]] = {}
     solved_count = 0
     timer = ExecutionTimer()
-    targets = list(benchmark["targets"].values())[shard_index::shard_count]
+    targets = list(benchmark["targets"].values())
     if limit is not None:
         targets = targets[:limit]
 
@@ -232,8 +207,7 @@ def run_aizynthfinder_predictions(
     # Keep the filter fixed so checkpoint comparisons isolate the expansion policy.
     finder.filter_policy.select("uspto")
 
-    console = Console(force_terminal=os.environ.get("PANDORA_FORCE_TERMINAL") == "1")
-    with create_cli_progress(console=console, unit="target") as progress:
+    with create_cli_progress(console=Console(), unit="target") as progress:
         progress_task = progress.add_task("Finding retrosynthetic paths", total=len(targets))
         with quiet_progress_info_logs():
             for target in targets:
@@ -270,14 +244,8 @@ def run_aizynthfinder_predictions(
     return results, solved_count, timer.to_dict()
 
 
-def shard_save_dir(base_dir: Path, *, shard_count: int, shard_index: int) -> Path:
-    if shard_count == 1:
-        return base_dir
-    return base_dir / "shards" / f"part-{shard_index:02d}-of-{shard_count:02d}"
-
-
 def save_aizynthfinder_results(
-    results: dict[str, TargetResult],
+    results: dict[str, dict[str, Any]],
     runtime: ExecutionStats,
     save_dir: Path,
     bench_path: Path,
@@ -287,7 +255,6 @@ def save_aizynthfinder_results(
     benchmark: Task,
     parameters: dict[str, Any],
     solved_count: int,
-    additional_sources: list[Path] | None = None,
 ) -> None:
     summary = {
         "solved_count": solved_count,
@@ -308,7 +275,7 @@ def save_aizynthfinder_results(
         action=script_name,
         adapter="aizynthfinder",
         raw_results_path=results_path,
-        sources=[bench_path, effective_config_path, *(additional_sources or [])],
+        sources=[bench_path, effective_config_path],
         root_dir=DATA_DIR,
         parameters=manifest_parameters,
         statistics=summary,
