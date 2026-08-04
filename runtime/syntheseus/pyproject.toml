@@ -11,7 +11,7 @@ dependencies = [
   "pyyaml",
   "retrocast==0.8.2",
   "syntheseus[local-retro]==0.7.2",
-  "torch==2.6.0",
+  "torch==2.13.0",
   "torch-scatter",
 ]
 
